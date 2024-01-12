@@ -25,14 +25,14 @@ class MainWindow(MainWindowBase):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_func)
         
-        new_thread = threading.Thread(target=self.start_http_server)
-        new_thread.start()
+        self.http_server_thread = threading.Thread(target=self.start_http_server)
+        self.http_server_thread.start()
          
     def start_http_server(self):
         http_responser.response_data = self._info.to_dict()
-        httpd = HTTPServer(self.http_server_address, MyHandler)
+        self.httpd_server = HTTPServer(self.http_server_address, MyHandler)
         print('Starting http server on {}:{}...'.format(*self.http_server_address))
-        httpd.serve_forever()
+        self.httpd_server.serve_forever()
         
     def start_server(self):
         self.server_thread = DataSendingThread(self)
@@ -99,8 +99,9 @@ class MainWindow(MainWindowBase):
             racerWidget.add_info_to(info)
             
     def closeEvent(self, event):
-        self.server_thread.terminate()
-        self.server_thread.wait()
+        self.httpd_server.shutdown()
+        self.http_server_thread.join()
+
         return super().closeEvent(event)
 
 

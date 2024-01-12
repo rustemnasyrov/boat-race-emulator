@@ -1,1 +1,3 @@
 /.venv
+__pycache__/main_send_thread.cpython-39.pyc
+__pycache__/regatta.cpython-39.pyc
