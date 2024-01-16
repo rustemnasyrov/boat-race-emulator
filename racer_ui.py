@@ -19,7 +19,7 @@ class RacerWidget(QWidget):
     def __init__(self, racer_info, distance=200, line=1):
         super().__init__()
         self._racer_info = racer_info
-        self._distance = distance
+        self._distance = distance #В метрах
         self._line = line
         self.initUI()
         self.update_info()
@@ -43,8 +43,11 @@ class RacerWidget(QWidget):
         if value != self._distance:
             self._distance = value
             self.distanceSlider.setValue(0)
-            self.distanceSlider.setMaximum(self._distance)
+            self.set_slider_maximum(self._distance)
             self.update_info()
+            
+    def set_slider_maximum(self, distance_in_meters):
+        self.distanceSlider.setMaximum(distance_in_meters * RacerModel.DISTANCE_MULTIPLAYER)
         
     @property
     def line(self):
@@ -69,10 +72,10 @@ class RacerWidget(QWidget):
         # создаем слайдер для выбора значения distance
         self.distanceSlider = QSlider(Qt.Horizontal, self)
         self.distanceSlider.setMinimum(0)
-        self.distanceSlider.setMaximum(self._distance)
+        self.set_slider_maximum(self._distance)
         self.distanceSlider.setValue(0)
         self.distanceSlider.setTickPosition(QSlider.TicksBelow)
-        self.distanceSlider.setTickInterval(10)
+        self.distanceSlider.setTickInterval(RacerModel.DISTANCE_MULTIPLAYER * 10)
         self.distanceSlider.valueChanged[int].connect(self.changeDistance)
         
         self.auto_mode = QCheckBox('Авто', self)
@@ -98,38 +101,40 @@ class RacerWidget(QWidget):
         self.setLayout(vbox)
 
     def changeDistance(self, value):
-        self._racer_info.s = value
-        self.distanceLabel.setText('Пройдено: {} из {} за {} c'.format(self._racer_info.s, self._distance, self._racer_info.t))
+        self._racer_info.distance = value 
+        self.distanceLabel.setText('Пройдено: {} м из {} за {} c'.format(self._racer_info.get_distance_meters(), self._distance, self._racer_info.time))
         
     def update_info(self):
         self.name_edit.setText(self._racer_info.racer)
-        self.sped_edit.setText(str(self._racer_info.v))
+        self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
         self.lineLabel.setText('Линия: {}'.format(self._line))
-        self.distanceSlider.setValue(self._racer_info.s)
+        self.distanceSlider.setValue(self._racer_info.distance )
         
     def tick(self, elapsed_time):
         if self.auto_mode.isChecked() and not self.is_finished():
-            self._racer_info.t = elapsed_time
-            self.distanceSlider.setValue(self._racer_info.v * (elapsed_time/1000))
+            dt = elapsed_time - self._racer_info.time
+            self._racer_info.time = elapsed_time
+            s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
+            self.distanceSlider.setValue(s)
             
     def reset(self):
-        self._racer_info.t = 0
+        self._racer_info.time = 0
         self.distanceSlider.setValue(0)
         
     def is_finished(self):
-        return self.distanceSlider.value() >= self._distance
-                        
+        return self._racer_info.get_distance_meters() >= self._distance 
+                            
     def send_info(self):
         self._racer_info.racer = self.name_edit.text()
         try:
             if self.sped_edit is not None:
                 text = self.sped_edit.text() or '0'
-                self._racer_info.v = float(text)
+                self._racer_info.set_speed_meters_sec(float(text))
         except ValueError:
             # Handle the case where the text cannot be converted to a float
             # For example, display an error message or set a default value.
             pass
-        self._racer_info.s = self.distanceSlider.value()
+        self._racer_info.distance = self.distanceSlider.value()
 
 
     def add_info_to(self, dict):

@@ -8,13 +8,13 @@ info_dict = {
     'regatta' : 'Кубок', #Наименование турнира
     'race' : "Мужчины", #Наименование заезда
     'race status' : 'ready', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен 
-    'distance' : 300, #дистанция заезда
+    'distance' : 300, #дистанция заезда в метрах
     'timer' : 0, #время в 10 долях секунд от начала старта. может время будет статусом?
     'tracks' : { 1 :  { #ключ - номер дорожки, заначение - информация о лодке и спротсмене
                     'racer': "Иванов", #ФИО гонщика
-                    's': 0,  #расстояние в метрах от старта (может сделать миллиметры и гонять int?)
-                    'v': 0,  #моментальная скорость в метрах в секунду (float или сделать миллиметры в секунду и гонять int?)
-                    't': 0}, #время от начала старта в миллисекндах на которое получены v и s (int) фактическилокальное время тренажёра
+                    'distance': 0,  #расстояние в миллиметрах от старта (int диапазон от 0 до 2000 метров в основном, но может быть и больше)
+                    'speed': 0,  #моментальная скорость в миллиметрах в секунду (int)
+                    'time': 0}, #время от начала старта в миллисекндах на которое получены v и s (int) фактически локальное время тренажёра
                 } 
 }
 
@@ -37,20 +37,39 @@ names = ["Агафонова И.",
          "Петрова Н."]
 
 class RacerModel:
-    def __init__(self, racer, v, s, t):
+    RC_RACER_KEY = 'racer'
+    RC_SPEED_KEY = 'v'
+    RC_DISTANCE_KEY = 's'
+    RC_TIME_KEY = 't'
+    
+    DISTANCE_MULTIPLAYER = 1000
+    
+    def __init__(self, racer, speed, distance, time=0):
         self.racer = racer
-        self.v = v
-        self.s = s
-        self.t = t
+        self.set_speed_meters_sec(speed)
+        self.set_distance_meters(distance)
+        self.time = time
+        
+    def set_distance_meters(self, distance):
+        self.distance = distance * self.DISTANCE_MULTIPLAYER
+        
+    def get_distance_meters(self):
+        return self.distance / self.DISTANCE_MULTIPLAYER
+    
+    def set_speed_meters_sec(self, speed):
+        self.speed = int(speed * self.DISTANCE_MULTIPLAYER)
+        
+    def get_speed_meters_sec(self):
+        return self.speed / self.DISTANCE_MULTIPLAYER
         
     def as_dict(self):
-        return {'racer': self.racer, 'v': self.v, 's': self.s, 't': self.t}
+        return {self.RC_RACER_KEY: self.racer, self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time}
     
     def from_dict(self, dict):
-        self.racer = dict['racer']
-        self.v = dict['v']
-        self.s = dict['s']
-        self.t = dict['t']
+        self.racer = dict[self.RC_RACER_KEY]
+        self.speed = int(dict[self.RC_SPEED_KEY])
+        self.distance = int(dict[self.RC_DISTANCE_KEY])
+        self.time = int(dict[self.RC_TIME_KEY])
         return self
     
 class RegattaRaceModel:
@@ -60,7 +79,7 @@ class RegattaRaceModel:
     RACE_STATUS_KEY = 'status'
     TIMER_KEY = 'timer'
     TRACKS_KEY = 'tracks'
-
+    
     def __init__(self, regatta_name, race_name, distance):
         self.regatta_name = regatta_name
         self.race_name = race_name
@@ -69,6 +88,12 @@ class RegattaRaceModel:
         self.timer = 0
         self.tracks = {}
         self.init_tracks()
+        
+    def set_distance_meters(self, distance):
+        self.distance = distance * RacerModel.DISTANCE_MULTIPLAYER
+        
+    def get_distance_meters(self):
+        return self.distance / RacerModel.DISTANCE_MULTIPLAYER
         
     def init_tracks(self):
         for i in range(1, 10):
@@ -113,21 +138,5 @@ class RegattaRaceModel:
         
         return self
 
-#---   Это формат итогового пакета, котоыф генерирется классами ниже
-#----------------------------------------------------------------
-info_old = { 
-    'regatta' : 'Кубок', #Наименование турнира
-    'race' : "Мужчины", #Наименование заезда
-    'race status' : 'ready', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен 
-    'distance' : 300, #дистанция заезда
-    'timer' : 0, #время в 10 долях секунд от начала старта. может время будет статусом?
-    'tracks' : { 1 :  { #ключ - номер дорожки, заначение - информация о лодке и спротсмене
-                    'racer': "Иванов", #ФИО гонщика
-                    's': 0,  #расстояние в метрах от старта (может сделать миллиметры и гонять int?)
-                    'v': 0,  #моментальная скорость в метрах в секунду (float или сделать миллиметры в секунду и гонять int?)
-                    't': 0}, #время от начала старта в миллисекндах на которое получены v и s (int) фактическилокальное время тренажёра
-                } 
-}
 
-#----------------------------------------------------------------
 
