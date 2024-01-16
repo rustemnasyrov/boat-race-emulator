@@ -38,9 +38,9 @@ names = ["Агафонова И.",
 
 class RacerModel:
     RC_RACER_KEY = 'racer'
-    RC_SPEED_KEY = 'v'
-    RC_DISTANCE_KEY = 's'
-    RC_TIME_KEY = 't'
+    RC_SPEED_KEY = 'speed'
+    RC_DISTANCE_KEY = 'distance'
+    RC_TIME_KEY = 'time'
     
     DISTANCE_MULTIPLAYER = 1000
     
@@ -62,8 +62,11 @@ class RacerModel:
     def get_speed_meters_sec(self):
         return self.speed / self.DISTANCE_MULTIPLAYER
         
-    def as_dict(self):
-        return {self.RC_RACER_KEY: self.racer, self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time}
+    def as_dict(self, with_racer=True):
+        result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time}
+        if with_racer:
+            result[self.RC_RACER_KEY] = self.racer
+        return result
     
     def from_dict(self, dict):
         self.racer = dict[self.RC_RACER_KEY]
@@ -107,9 +110,7 @@ class RegattaRaceModel:
             self.tracks[line] = racer.from_dict(dict)
 
     def to_dict(self):
-        tracks_dict = {}
-        for i, track in self.tracks.items():
-            tracks_dict[i] = track.as_dict()
+        tracks_dict = self.tracks_dict()
         
         return {
             self.REGATTA_NAME_KEY: self.regatta_name,
@@ -119,6 +120,12 @@ class RegattaRaceModel:
             self.TIMER_KEY: self.timer,
             self.TRACKS_KEY: tracks_dict
         }
+
+    def tracks_dict(self, with_racer=True):
+        tracks_dict = {}
+        for i, track in self.tracks.items():
+            tracks_dict[i] = track.as_dict(with_racer)
+        return tracks_dict
         
     def __json__(self):
         return self.to_dict()

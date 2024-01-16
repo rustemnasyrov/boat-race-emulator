@@ -114,6 +114,10 @@ class MainWindowBase(QWidget):
     def get_info(self):
         with QMutexLocker(self._info_lock):
             return self._info.to_dict()
+        
+    def get_tracks_info(self):
+        with QMutexLocker(self._info_lock):
+            return self._info.tracks_dict(False)
 
     def update_info(self):
         self.regatta_edit.setText(self._info.regatta_name)

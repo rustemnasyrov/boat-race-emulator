@@ -1,4 +1,5 @@
 from http.server import HTTPServer
+import json
 import sys
 import socket
 import threading
@@ -6,6 +7,7 @@ from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QLineEdit
 from http_responser import MyHandler
 import http_responser
+from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
 from main_send_thread import DataSendingThread
 from datetime import datetime
@@ -24,9 +26,7 @@ class MainWindow(MainWindowBase):
          # Создаем таймер и подключаем его к слоту
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_func)
-        
-        self.http_server_thread = threading.Thread(target=self.start_http_server)
-        self.http_server_thread.start()
+    
          
     def start_http_server(self):
         http_responser.response_data = self._info.to_dict()
@@ -35,6 +35,15 @@ class MainWindow(MainWindowBase):
         self.httpd_server.serve_forever()
         
     def start_server(self):
+        self.http_server_thread = threading.Thread(target=self.start_http_server)
+        self.http_server_thread.start()
+        
+        self.ws_sender= WebsocketSender('ws://31.129.102.190:8000/simulators', self.get_tracks_info)
+        self.ws_sender.start()
+        
+        self.start_server_thread()
+        
+    def start_server_thread(self):
         self.server_thread = DataSendingThread(self)
         self.server_thread.status_changed.connect(self.update_status)
         self.server_thread.start()
@@ -99,6 +108,8 @@ class MainWindow(MainWindowBase):
             racerWidget.add_info_to(info)
             
     def closeEvent(self, event):
+        self.ws_sender.stop()
+        
         self.httpd_server.shutdown()
         self.http_server_thread.join()
 
