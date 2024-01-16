@@ -18,6 +18,17 @@ class MyHandler(BaseHTTPRequestHandler):
       #  response = {'message': 'Received JSON data:', 'data': json_data}
         response_json = json.dumps(response_data)
         self.wfile.write(response_json.encode())
+        
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            response_json = json.dumps(response_data)
+            self.wfile.write(response_json.encode())
+        else:
+            self.send_error(404)
 
 if __name__ == '__main__':
     server_address = ('', 8000)
