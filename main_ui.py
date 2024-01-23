@@ -13,14 +13,21 @@ from main_send_thread import DataSendingThread
 from datetime import datetime
 
 from racer_ui import RacerModel, RacerWidget
+from recieve_udp import recieve_udp_from_trainer
+from send_udp import send_udp_to_trainer
+
 
 class MainWindow(MainWindowBase):
+    START_COMMAND = 0
+    PAUSE_COMMAND = 1
+    FINISH_COMMAND = 2
     start_time = datetime.now() # Сохраняем время открытия окна
     http_server_address = ('127.0.0.1', 8000)
     
     def __init__(self):
         super().__init__()
-        
+
+        self.udp_recieve_thread = None
         self.setWindowTitle("Эмулятор отправки информации о тренажёрах")  
         
          # Создаем таймер и подключаем его к слоту
@@ -33,8 +40,22 @@ class MainWindow(MainWindowBase):
         self.httpd_server = HTTPServer(self.http_server_address, MyHandler)
         print('Starting http server on {}:{}...'.format(*self.http_server_address))
         self.httpd_server.serve_forever()
+
+    def recieve_udp_packets(self):
+        recieve_udp_from_trainer(self.process_udp_packet)
+
+    def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
+        #print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
+        self.racer_widgets[lane].racer_info.set_distance_meters(distance)
+        self.racer_widgets[lane].racer_info.set_speed_km_hour(speed)
+        self.racer_widgets[lane].racer_info.set_time_from_seconds(time)
+        self.racer_widgets[lane].update_info()
         
     def start_server(self):
+        self.udp_recieve_thread = threading.Thread(target=self.recieve_udp_packets)
+        self.udp_recieve_thread.start()
+
+
         self.http_server_thread = threading.Thread(target=self.start_http_server)
         self.http_server_thread.start()
         
@@ -69,11 +90,14 @@ class MainWindow(MainWindowBase):
     def add_buttons(self, layout):
         self.ready_button = QPushButton('Ready - на старт')
         self.ready_button.clicked.connect(self.status_ready)
+
+
         self.go_button = QPushButton('Go - гонка')
         self.go_button.clicked.connect(self.status_go)
+
         self.finish_button = QPushButton('Finish - завершить гонку')
-        
         self.finish_button.clicked.connect(self.status_finish)
+
         row = QHBoxLayout()
         row.addWidget(self.ready_button)
         row.addWidget(self.go_button)
@@ -85,6 +109,7 @@ class MainWindow(MainWindowBase):
         pass
         
     def status_ready(self):
+        send_udp_to_trainer(self.PAUSE_COMMAND)
         self.race_status_edit.setText('ready')
         self.timer.stop() 
         self.timer_edit.setText('0')
@@ -93,11 +118,13 @@ class MainWindow(MainWindowBase):
         self.send_info()
         
     def status_go(self):
+        send_udp_to_trainer(self.START_COMMAND)
         self.race_status_edit.setText('go')
         self.start_time = datetime.now() # Сохраняем время открытия окна
         self.timer.start(100)
     
     def status_finish(self):
+        send_udp_to_trainer(self.FINISH_COMMAND)
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()

@@ -48,17 +48,21 @@ class RacerModel:
         self.racer = racer
         self.set_speed_meters_sec(speed)
         self.set_distance_meters(distance)
-        self.time = time
-        
+        self.time = time #milis
+
+    def set_time_from_seconds(self, seconds):
+        self.time = int(seconds * 1000)
     def set_distance_meters(self, distance):
-        self.distance = distance * self.DISTANCE_MULTIPLAYER
+        self.distance = int(distance * self.DISTANCE_MULTIPLAYER)
         
     def get_distance_meters(self):
         return self.distance / self.DISTANCE_MULTIPLAYER
     
     def set_speed_meters_sec(self, speed):
         self.speed = int(speed * self.DISTANCE_MULTIPLAYER)
-        
+
+    def set_speed_km_hour(self, speed):
+        self.set_speed_meters_sec(speed / 3.6)
     def get_speed_meters_sec(self):
         return self.speed / self.DISTANCE_MULTIPLAYER
         
