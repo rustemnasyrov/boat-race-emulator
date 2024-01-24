@@ -8,7 +8,7 @@ info_dict = {
     'regatta' : 'Кубок', #Наименование турнира
     'race' : "Мужчины", #Наименование заезда
     'race status' : 'ready', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен 
-    'distance' : 300, #дистанция заезда в метрах
+    'distance' : 100, #дистанция заезда в метрах
     'timer' : 0, #время в 10 долях секунд от начала старта. может время будет статусом?
     'tracks' : { 1 :  { #ключ - номер дорожки, заначение - информация о лодке и спротсмене
                     'racer': "Иванов", #ФИО гонщика
@@ -60,9 +60,6 @@ class RacerModel:
     
     def set_speed_meters_sec(self, speed):
         self.speed = int(speed * self.DISTANCE_MULTIPLAYER)
-
-    def set_speed_km_hour(self, speed):
-        self.set_speed_meters_sec(speed / 3.6)
     def get_speed_meters_sec(self):
         return self.speed / self.DISTANCE_MULTIPLAYER
         

@@ -2,8 +2,11 @@ import socket
 import time
 import struct
 
+START_COMMAND = 0
+PAUSE_COMMAND = 1
+FINISH_COMMAND = 2
 
-UDP_IP = "192.168.137.255"  # Широковещательный адрес
+UDP_IP = "192.168.1.255"  # Широковещательный адрес
 UDP_PORT = 61111
 
 # Создаем сокет
@@ -34,13 +37,13 @@ def send_data(state, seconds, distance, data):
     data_to_send = struct.pack(str_format, header.encode('utf-8'), state, seconds, distance, n, *data)
     return data_to_send
 
-def send_udp_to_trainer(state_):
+def send_udp_to_trainer(state_, info):
     state = state_
     seconds = 0
-    distance = 1000
+    distance = info.distance
     weight = [80, 85]
     age = [21, 35]
-    id = [2200289112, 2]
+    id = [1054351936, 1054351937]
     data = []
     for i in range(len(age)):
         data.append(id[i])
@@ -55,5 +58,5 @@ def send_udp_to_trainer(state_):
     time.sleep(3)
 
 if __name__ == '__main__':
-    send_udp_to_trainer()
+    pass
 

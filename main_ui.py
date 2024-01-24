@@ -13,14 +13,10 @@ from main_send_thread import DataSendingThread
 from datetime import datetime
 
 from racer_ui import RacerModel, RacerWidget
-from recieve_udp import recieve_udp_from_trainer
-from send_udp import send_udp_to_trainer
-
+from recieve_udp import receive_udp_from_trainer
+from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_COMMAND
 
 class MainWindow(MainWindowBase):
-    START_COMMAND = 0
-    PAUSE_COMMAND = 1
-    FINISH_COMMAND = 2
     start_time = datetime.now() # Сохраняем время открытия окна
     http_server_address = ('127.0.0.1', 8000)
     
@@ -42,14 +38,15 @@ class MainWindow(MainWindowBase):
         self.httpd_server.serve_forever()
 
     def recieve_udp_packets(self):
-        recieve_udp_from_trainer(self.process_udp_packet)
+        receive_udp_from_trainer(self.process_udp_packet)
 
     def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
         #print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
-        self.racer_widgets[lane].racer_info.set_distance_meters(distance)
-        self.racer_widgets[lane].racer_info.set_speed_km_hour(speed)
-        self.racer_widgets[lane].racer_info.set_time_from_seconds(time)
-        self.racer_widgets[lane].update_info()
+
+        if boat_id == 1054351936:
+            self.racer_widgets[1].update_info_udp(distance, speed, time)
+        else:
+            self.racer_widgets[2].update_info_udp(distance, speed, time)
         
     def start_server(self):
         self.udp_recieve_thread = threading.Thread(target=self.recieve_udp_packets)
@@ -59,8 +56,8 @@ class MainWindow(MainWindowBase):
         self.http_server_thread = threading.Thread(target=self.start_http_server)
         self.http_server_thread.start()
         
-        self.ws_sender= WebsocketSender('ws://31.129.102.190:8000/simulators', self.get_tracks_info)
-        self.ws_sender.start()
+        #self.ws_sender= WebsocketSender('ws://31.129.102.190:8000/simulators', self.get_tracks_info)
+        #self.ws_sender.start()
         
         self.start_server_thread()
         
@@ -109,7 +106,7 @@ class MainWindow(MainWindowBase):
         pass
         
     def status_ready(self):
-        send_udp_to_trainer(self.PAUSE_COMMAND)
+        send_udp_to_trainer(PAUSE_COMMAND, self._info)
         self.race_status_edit.setText('ready')
         self.timer.stop() 
         self.timer_edit.setText('0')
@@ -118,13 +115,13 @@ class MainWindow(MainWindowBase):
         self.send_info()
         
     def status_go(self):
-        send_udp_to_trainer(self.START_COMMAND)
+        send_udp_to_trainer(START_COMMAND, self._info)
         self.race_status_edit.setText('go')
         self.start_time = datetime.now() # Сохраняем время открытия окна
         self.timer.start(100)
     
     def status_finish(self):
-        send_udp_to_trainer(self.FINISH_COMMAND)
+        send_udp_to_trainer(FINISH_COMMAND, self._info)
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()
