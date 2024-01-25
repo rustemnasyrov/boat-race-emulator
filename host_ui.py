@@ -77,6 +77,7 @@ class HostWindow(MainWindowBase):
                 track = self._info.tracks[int(idx)]
                 track.racer = value['fio']
                 track.weight = value['weight']
+                track.age = value['age']
 
         send_udp_to_trainer(status, self.get_info_without_mutes())
 
