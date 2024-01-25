@@ -18,7 +18,8 @@ from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_C
 
 class MainWindow(MainWindowBase):
     start_time = datetime.now() # Сохраняем время открытия окна
-    http_server_address = ('127.0.0.1', 8000)
+    http_server_address = ('127.0.0.1', 8888)
+    httpd_server = None
     
     def __init__(self):
         super().__init__()
@@ -32,6 +33,7 @@ class MainWindow(MainWindowBase):
     
          
     def start_http_server(self):
+        self.stop_httpd_server()
         http_responser.response_data = self._info.to_dict()
         self.httpd_server = HTTPServer(self.http_server_address, MyHandler)
         print('Starting http server on {}:{}...'.format(*self.http_server_address))
@@ -134,10 +136,14 @@ class MainWindow(MainWindowBase):
     def closeEvent(self, event):
         self.ws_sender.stop()
         
-        self.httpd_server.shutdown()
+        self.stop_httpd_server()
         self.http_server_thread.join()
 
         return super().closeEvent(event)
+
+    def stop_httpd_server(self):
+        if self.httpd_server is not None:
+            self.httpd_server.shutdown()
 
 
 if __name__ == '__main__':
