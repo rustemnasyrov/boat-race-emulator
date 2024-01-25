@@ -125,10 +125,10 @@ class MainWindowBase(QWidget):
         self.regatta_edit.setText(self._info.regatta_name)
         self.race_edit.setText(self._info.race_name)
         self.race_status_edit.setText(self._info.race_status)
-        self.distance_edit.setText(str(self._info.distance))
+        self.distance_edit.setText(str(self._info.get_distance_meters()))
         self.timer_edit.setText(str(self._info.timer))
         for racerWidget in self.racer_widgets:
-            racerWidget.distance = self._info.distance
+            racerWidget.distance = self._info.get_distance_meters()
             racerWidget.update_info()
                           
     def update_status(self, status):

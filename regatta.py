@@ -49,6 +49,9 @@ class RacerModel:
         self.set_speed_meters_sec(speed)
         self.set_distance_meters(distance)
         self.time = time #milis
+        self.weight = 60
+        self.age = 15
+        self.trainer_id = 0
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -97,7 +100,7 @@ class RegattaRaceModel:
         self.distance = distance * RacerModel.DISTANCE_MULTIPLAYER
         
     def get_distance_meters(self):
-        return self.distance / RacerModel.DISTANCE_MULTIPLAYER
+        return int(self.distance / RacerModel.DISTANCE_MULTIPLAYER)
         
     def init_tracks(self):
         for i in range(1, 10):

@@ -3,6 +3,7 @@ import json
 import threading
 import time
 
+
 # Создаем словарь с данными, которые мы хотим отправить
 data = {
     "1": {'racer': 'John', 'speed': '50', 'distance': '100', 'time': '0'},
@@ -18,15 +19,20 @@ data = {
 
 #Перепеши то что ниже в класс для работы с вэб-сокетом
 class WebsocketSender:
-    
+    cnt = 0
     def __init__(self, url, data_function):
         self.url = url
         self.data_function = data_function
         self.do_run = True
+
         
         
-    def start(self):
+    def start_send(self):
         self.thread = threading.Thread(target=self.send_data_to_websocket)
+        self.thread.start()
+
+    def start_receive(self):
+        self.thread = threading.Thread(target=self.receive_data_from_websocket)
         self.thread.start()
         
     def stop(self):
@@ -49,7 +55,7 @@ class WebsocketSender:
                 # Отправляем JSON-данные на вэб-сокет
                 data = self.data_function()
                 self.ws.send(json.dumps(data))
-                time.sleep(0.01)
+                time.sleep(2)
             except Exception as e:
                 print('Websocket send error {}'.format(e))
                 time.sleep(5)
@@ -58,24 +64,35 @@ class WebsocketSender:
         self.close()
 
     def receive_data_from_websocket(self):
+        self.ws = None
         while self.do_run:
             try:
+                if not self.ws:
+                    self.ws = websocket.WebSocket()
+                    self.ws.connect(self.url)
+
                 message = self.ws.recv()
                 # Обрабатываем полученные данные в json
                 json_data = json.loads(message)
-
-                print(message)
+                self.data_function(json_data)
             except Exception as e:
                 print('Websocket receive error {}'.format(e))
                 time.sleep(5)
                 self.ws = None
 
 
-def get_data():
+def send_data():
     return data
+
+def receive_data(data):
+    cur = data['simulators']
+    for i in (data['simulators']):
+        print(cur[i]['fio'])
 
 # Запускаем функцию отправки данных в отдельном потоке
 if __name__ == '__main__':
-    t = WebsocketSender('ws://31.129.102.190:8000/ws/simulators', get_data)
-    t.start()
+    t = WebsocketSender('ws://31.129.102.190:8000/ws/simulators', send_data)
+    t.start_send()
+    t = WebsocketSender('ws://31.129.102.190:8000/ws/commands', receive_data)
+    t.start_receive()
 

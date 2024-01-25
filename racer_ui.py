@@ -65,6 +65,8 @@ class RacerWidget(QWidget):
         self.nameLabel = QLabel('ФИО:', self)
         self.name_edit = QLineEdit()
         self.name_edit.setMaximumHeight(20)
+        self.weightLabel = QLabel('Вес:', self)
+        self.weight_edit = QLineEdit()
         self.speedLabel = QLabel('Скорость:', self)
         self.sped_edit = QLineEdit()
         self.sped_edit.setMaximumHeight(20)
@@ -88,6 +90,8 @@ class RacerWidget(QWidget):
         row.addWidget(self.lineLabel)
         row.addWidget(self.nameLabel)
         row.addWidget(self.name_edit)
+        row.addWidget(self.weightLabel)
+        row.addWidget(self.weight_edit)
         row.addWidget(self.speedLabel)
         row.addWidget(self.sped_edit)
         row.addWidget(self.auto_mode)
@@ -113,6 +117,7 @@ class RacerWidget(QWidget):
 
     def update_info(self):
         self.name_edit.setText(self._racer_info.racer)
+        self.weight_edit.setText(str(self._racer_info.weight))
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
         self.lineLabel.setText('Линия: {}'.format(self._line))
         self.distanceSlider.setValue(self._racer_info.distance )
@@ -133,6 +138,7 @@ class RacerWidget(QWidget):
                             
     def send_info(self):
         self._racer_info.racer = self.name_edit.text()
+        self._racer_info.weight = int(self.weight_edit.text() or '60')
         try:
             if self.sped_edit is not None:
                 text = self.sped_edit.text() or '0'

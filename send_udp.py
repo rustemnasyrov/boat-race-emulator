@@ -38,23 +38,20 @@ def send_data(state, seconds, distance, data):
     return data_to_send
 
 def send_udp_to_trainer(state_, info):
-    state = state_
-    seconds = 0
-    distance = info.distance
-    weight = [80, 85]
-    age = [21, 35]
-    id = [1054351936, 1054351937]
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1}
     data = []
-    for i in range(len(age)):
-        data.append(id[i])
-        data.append(weight[i])
-        data.append(age[i])
+    for i, track in info.tracks.items():
+        if track.trainer_id != 0:
+            data.append(track.trainer_id)
+            #упаковываем вес в байт
+            # Convert weight to bytes
+            data.append(track.weight)
+            data.append(track.age)
 
-    data2 = send_data(state, seconds, distance, data)
+    data2 = send_data(status_str_to_int[info.race_status], 0, info.get_distance_meters(), data)
     if data2 != 0:
         sock.sendto(data2, (UDP_IP, UDP_PORT))
 
-    print(str(state) + " sent\n")
     time.sleep(3)
 
 if __name__ == '__main__':
