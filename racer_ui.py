@@ -103,7 +103,14 @@ class RacerWidget(QWidget):
     def changeDistance(self, value):
         self._racer_info.distance = value 
         self.distanceLabel.setText('Пройдено: {} м из {} за {} c'.format(self._racer_info.get_distance_meters(), self._distance, self._racer_info.time))
-        
+
+
+    def update_info_udp(self, distance, speed, time):
+        self.racer_info.set_distance_meters(distance)
+        self.racer_info.set_speed_meters_sec(speed)
+        self.racer_info.set_time_from_seconds(time)
+        self.update_info()
+
     def update_info(self):
         self.name_edit.setText(self._racer_info.racer)
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))

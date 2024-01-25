@@ -57,12 +57,25 @@ class WebsocketSender:
         
         self.close()
 
+    def receive_data_from_websocket(self):
+        while self.do_run:
+            try:
+                message = self.ws.recv()
+                # Обрабатываем полученные данные в json
+                json_data = json.loads(message)
+
+                print(message)
+            except Exception as e:
+                print('Websocket receive error {}'.format(e))
+                time.sleep(5)
+                self.ws = None
+
 
 def get_data():
     return data
 
 # Запускаем функцию отправки данных в отдельном потоке
 if __name__ == '__main__':
-    t = WebsocketSender('ws://31.129.102.190:8000/simulators', get_data)
+    t = WebsocketSender('ws://31.129.102.190:8000/ws/simulators', get_data)
     t.start()
 

@@ -114,7 +114,9 @@ class MainWindowBase(QWidget):
     def get_info(self):
         with QMutexLocker(self._info_lock):
             return self._info.to_dict()
-        
+
+    def get_info_without_mutes(self):
+        return self._info
     def get_tracks_info(self):
         with QMutexLocker(self._info_lock):
             return self._info.tracks_dict(False)
