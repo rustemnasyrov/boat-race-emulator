@@ -38,7 +38,7 @@ def send_data(state, seconds, distance, data):
     return data_to_send
 
 def send_udp_to_trainer(state_, info):
-    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1}
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':1 }
     data = []
     for i, track in info.tracks.items():
         if track.trainer_id != 0:

@@ -142,10 +142,10 @@ class MainWindowBase(QWidget):
         self._info.regatta_name = self.regatta_edit.text()
         self._info.race_name = self.race_edit.text()
         self._info.race_status = self.race_status_edit.text()
-        self._info.distance = int(self.distance_edit.text() or '200')
+        self._info.set_distance_meters(int(self.distance_edit.text() or '200'))
         self._info.timer = int(self.timer_edit.text() or '0') 
         for racer_widget in self.racer_widgets:
-            racer_widget.distance = self._info.distance
+            racer_widget.distance = self._info.get_distance_meters()
             racer_widget.send_info()
                 
     def start_server(self):

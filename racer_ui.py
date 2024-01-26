@@ -110,7 +110,7 @@ class RacerWidget(QWidget):
 
     def changeDistance(self, value):
         self._racer_info.distance = value 
-        self.distanceLabel.setText('Пройдено: {} м из {} за {} c'.format(self._racer_info.get_distance_meters(), self._distance, self._racer_info.time))
+        self.distanceLabel.setText('Пройдено: {:07.2f} м из {} за {} c'.format(self._racer_info.get_distance_meters(), self._distance, self._racer_info.time))
 
 
     def update_info_udp(self, distance, speed, time):
