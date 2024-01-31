@@ -4,6 +4,8 @@ import json
 
 response_data = {'message': 'Hello, World!'}
 
+logger = None
+
 class MyHandler(BaseHTTPRequestHandler):
         
     def do_POST(self):
@@ -27,6 +29,7 @@ class MyHandler(BaseHTTPRequestHandler):
             
             response_json = json.dumps(response_data)
             self.wfile.write(response_json.encode())
+            logger.info('Get Response distance: ' + str(response_data['tracks'][1]['distance']))
         else:
             self.send_error(404)
 

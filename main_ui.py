@@ -1,5 +1,6 @@
 from http.server import HTTPServer
 import json
+import logging
 import sys
 import socket
 import threading
@@ -30,6 +31,34 @@ class MainWindow(MainWindowBase):
          # Создаем таймер и подключаем его к слоту
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_func)
+
+        self.create_logger()
+
+    def create_logger(self):
+        # Создаем объект логгера
+        self.logger = logging.getLogger(__name__)
+
+        # Устанавливаем уровень логирования
+        self.logger.setLevel(logging.INFO)
+
+        # Создаем обработчик для записи в файл
+        file_handler = logging.FileHandler('my_log_file.log')
+
+        # Устанавливаем уровень логирования для обработчика
+        file_handler.setLevel(logging.INFO)
+
+        # Создаем форматтер для сообщений лога
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # Устанавливаем форматтер для обработчика
+        file_handler.setFormatter(formatter)
+
+        # Добавляем обработчик к логгеру
+        self.logger.addHandler(file_handler)
+
+        self.logger.info('Application started')
+        http_responser.logger = self.logger
+
     
          
     def start_http_server(self):
@@ -47,10 +76,14 @@ class MainWindow(MainWindowBase):
             track = self._info.tracks[lane]
             track.trainer_id = boat_id
             track.set_distance_meters(distance)
+            
+            self.logger.info('udp_distance: ' + str(distance))
+            
             track.time = time * 1000
             track.set_speed_meters_sec(speed)
             if self._info.is_status_running:
                 self.racer_widgets[lane-1].update_info()
+
 
         http_responser.response_data = self._info.to_dict()
         
@@ -131,7 +164,7 @@ class MainWindow(MainWindowBase):
     def status_go(self):
         self.race_status_edit.setText('countdown')
         self.start_time = datetime.now() # Сохраняем время открытия окна
-        self.timer.start(1)
+        self.timer.start(50)
         self.send_info()
         send_udp_to_trainer(self._info)
     
