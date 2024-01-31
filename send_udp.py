@@ -50,9 +50,9 @@ def send_udp_to_trainer(state_, info):
 
     data2 = send_data(status_str_to_int[info.race_status], 0, info.get_distance_meters(), data)
     if data2 != 0:
-        sock.sendto(data2, (UDP_IP, UDP_PORT))
+        for i in range(5):
+            sock.sendto(data2, (UDP_IP, UDP_PORT))
 
-    time.sleep(3)
 
 if __name__ == '__main__':
     pass

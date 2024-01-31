@@ -87,6 +87,8 @@ class MainWindow(MainWindowBase):
         if self._info.is_status_countdown and elapsed_time >= 3000:
             self.race_status_edit.setText('go')
             self.start_time = datetime.now()
+            send_udp_to_trainer(START_COMMAND, self._info)
+ 
         
         if self._info.is_status_running:
             for racerWidget in self.racer_widgets:
@@ -115,22 +117,21 @@ class MainWindow(MainWindowBase):
         pass
         
     def status_ready(self):
-       # send_udp_to_trainer(PAUSE_COMMAND, self._info)
         self.race_status_edit.setText('ready')
         self.timer.stop() 
         self.timer_edit.setText('0')
         for racerWidget in self.racer_widgets:
             racerWidget.reset()
         self.send_info()
+        send_udp_to_trainer(PAUSE_COMMAND, self._info)
         
     def status_go(self):
-        #send_udp_to_trainer(START_COMMAND, self._info)
         self.race_status_edit.setText('countdown')
         self.start_time = datetime.now() # Сохраняем время открытия окна
         self.timer.start(10)
     
     def status_finish(self):
-        #send_udp_to_trainer(FINISH_COMMAND, self._info)
+        send_udp_to_trainer(FINISH_COMMAND, self._info)
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()

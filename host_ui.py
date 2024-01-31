@@ -1,6 +1,7 @@
 import threading
 
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
+from get_reponser import GetResponser
 
 from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
@@ -20,7 +21,6 @@ class HostWindow(MainWindowBase):
     def add_buttons(self, layout):
         self.ready_button = QPushButton('Ready - на старт')
         self.ready_button.clicked.connect(self.status_ready)
-
 
         self.go_button = QPushButton('Go - гонка')
         self.go_button.clicked.connect(self.status_go)
@@ -59,7 +59,14 @@ class HostWindow(MainWindowBase):
 
         self.ws_receiver = WebsocketSender('ws://31.129.102.190:8000/ws/commands', self.receive_info)
         self.ws_receiver.start_receive()
+        
+        self.get_responser = GetResponser.start_thread()
+        self.get_responser.set_data(self._info.to_dict())
 
+    def send_info_safe(self):
+        super().send_info_safe()
+        self.get_responser.set_data(self._info.to_dict())
+        
     def receive_info(self, data):
         if not data:
             return
@@ -83,9 +90,8 @@ class HostWindow(MainWindowBase):
 
         self.update_info()
 
-
-
     def status_ready(self):
+        
         self.send_info()
         send_udp_to_trainer(PAUSE_COMMAND, self.get_info_without_mutes())
 
@@ -106,6 +112,12 @@ class HostWindow(MainWindowBase):
             new_d['state'] = False
             data[str(i+1)] = new_d
         return data
+    
+    def closeEvent(self, event):
+        
+        self.get_responser.stop()
+        
+        return super().closeEvent(event)    
 
 
 if __name__ == '__main__':

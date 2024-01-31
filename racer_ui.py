@@ -131,7 +131,7 @@ class RacerWidget(QWidget):
         if self.auto_mode.isChecked() and not self.is_finished():
             dt = elapsed_time - self._racer_info.time
             self._racer_info.time = elapsed_time
-            s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
+            s = int(self._racer_info.distance + self._racer_info.speed * (dt/1000))
             self.distanceSlider.setValue(s)
             
     def reset(self):
