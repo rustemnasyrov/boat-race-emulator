@@ -109,7 +109,7 @@ class MainWindow(MainWindowBase):
         
     def status_ready(self):
         send_udp_to_trainer(PAUSE_COMMAND, self._info)
-        self.race_status_edit.setText('ready')
+        self.race_status_edit.setText('on_start')
         self.timer.stop() 
         self.timer_edit.setText('0')
         for racerWidget in self.racer_widgets:

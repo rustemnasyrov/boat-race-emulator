@@ -85,9 +85,7 @@ def send_data():
     return data
 
 def receive_data(data):
-    cur = data['simulators']
-    for i in (data['simulators']):
-        print(cur[i]['fio'])
+    print(data)
 
 # Запускаем функцию отправки данных в отдельном потоке
 if __name__ == '__main__':

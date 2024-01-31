@@ -7,7 +7,7 @@ import random
 info_dict = { 
     'regatta' : 'Кубок', #Наименование турнира
     'race' : "Мужчины", #Наименование заезда
-    'race status' : 'ready', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен 
+    'race status' : 'on_start', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен
     'distance' : 100, #дистанция заезда в метрах
     'timer' : 0, #время в 10 долях секунд от начала старта. может время будет статусом?
     'tracks' : { 1 :  { #ключ - номер дорожки, заначение - информация о лодке и спротсмене
@@ -91,7 +91,7 @@ class RegattaRaceModel:
         self.regatta_name = regatta_name
         self.race_name = race_name
         self.distance = distance
-        self.race_status = 'ready'
+        self.race_status = 'on_start'
         self.timer = 0
         self.tracks = {}
         self.init_tracks()

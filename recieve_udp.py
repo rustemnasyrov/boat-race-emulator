@@ -44,10 +44,7 @@ def receive_udp_from_trainer(update_func):
         time = received_byte[TIME_BYTES]
         distance = received_byte[DISTANCE_BYTES]
         speed = received_byte[SPEED_BYTES]
-        print(str(id) + " " + str(time))
-        print(received_byte)
         update_func(lane, id, state, distance, time, speed)
-
 
 def update_func(lane, id, state, distance, time, speed):
     print(f"id:{id}, state: {state}, distance: {distance}, lane: {lane}, time: {time}, speed: {speed}")
