@@ -90,12 +90,20 @@ class RegattaRaceModel:
     def __init__(self, regatta_name, race_name, distance):
         self.regatta_name = regatta_name
         self.race_name = race_name
-        self.distance = distance
-        self.race_status = 'on_start'
+        self.set_distance_meters(distance)
+        self.race_status = 'ready'
         self.timer = 0
         self.tracks = {}
         self.init_tracks()
         
+    @property
+    def is_status_countdown(self):
+        return self.race_status == 'countdown'
+    
+    @property
+    def is_status_running(self):
+        return self.race_status == 'go'
+    
     def set_distance_meters(self, distance):
         self.distance = distance * RacerModel.DISTANCE_MULTIPLAYER
         
@@ -119,7 +127,7 @@ class RegattaRaceModel:
         return {
             self.REGATTA_NAME_KEY: self.regatta_name,
             self.RACE_NAME_KEY: self.race_name,
-            self.DISTANCE_KEY: self.distance,
+            self.DISTANCE_KEY: self.get_distance_meters(),
             self.RACE_STATUS_KEY: self.race_status,
             self.TIMER_KEY: self.timer,
             self.TRACKS_KEY: tracks_dict

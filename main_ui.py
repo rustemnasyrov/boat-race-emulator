@@ -83,9 +83,16 @@ class MainWindow(MainWindowBase):
         
     def tick(self, elapsed_time):
         self.timer_edit.setText(str(elapsed_time)) # Отображаем время в момент обновления 
-        for racerWidget in self.racer_widgets:
-            racerWidget.tick(elapsed_time)
         
+        if self._info.is_status_countdown and elapsed_time >= 3000:
+            self.race_status_edit.setText('go')
+            self.start_time = datetime.now()
+        
+        if self._info.is_status_running:
+            for racerWidget in self.racer_widgets:
+                racerWidget.tick(elapsed_time)
+                
+            
     def add_buttons(self, layout):
         self.ready_button = QPushButton('Ready - на старт')
         self.ready_button.clicked.connect(self.status_ready)
@@ -108,8 +115,8 @@ class MainWindow(MainWindowBase):
         pass
         
     def status_ready(self):
-        send_udp_to_trainer(PAUSE_COMMAND, self._info)
-        self.race_status_edit.setText('on_start')
+       # send_udp_to_trainer(PAUSE_COMMAND, self._info)
+        self.race_status_edit.setText('ready')
         self.timer.stop() 
         self.timer_edit.setText('0')
         for racerWidget in self.racer_widgets:
@@ -117,13 +124,13 @@ class MainWindow(MainWindowBase):
         self.send_info()
         
     def status_go(self):
-        send_udp_to_trainer(START_COMMAND, self._info)
-        self.race_status_edit.setText('go')
+        #send_udp_to_trainer(START_COMMAND, self._info)
+        self.race_status_edit.setText('countdown')
         self.start_time = datetime.now() # Сохраняем время открытия окна
-        self.timer.start(100)
+        self.timer.start(10)
     
     def status_finish(self):
-        send_udp_to_trainer(FINISH_COMMAND, self._info)
+        #send_udp_to_trainer(FINISH_COMMAND, self._info)
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()
@@ -134,7 +141,7 @@ class MainWindow(MainWindowBase):
             racerWidget.add_info_to(info)
             
     def closeEvent(self, event):
-        self.ws_sender.stop()
+        #self.ws_sender.stop()
         
         self.stop_httpd_server()
         self.http_server_thread.join()
