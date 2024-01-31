@@ -132,7 +132,7 @@ class RacerWidget(QWidget):
             dt = elapsed_time - self._racer_info.time
             self._racer_info.time = elapsed_time
             s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
-            self.distanceSlider.setValue(s)
+            self.distanceSlider.setValue(int(s))
             
     def reset(self):
         self._racer_info.time = 0

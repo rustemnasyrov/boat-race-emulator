@@ -43,12 +43,17 @@ class MainWindow(MainWindowBase):
         receive_udp_from_trainer(self.process_udp_packet)
 
     def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
-        #print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
+        if lane in self._info.tracks:
+            track = self._info.tracks[lane]
+            track.trainer_id = boat_id
+            track.set_distance_meters(distance)
+            track.time = time * 1000
+            track.set_speed_meters_sec(speed)
+            if self._info.is_status_running:
+                self.racer_widgets[lane-1].update_info()
 
-        if boat_id == 1054351936:
-            self.racer_widgets[1].update_info_udp(distance, speed, time)
-        else:
-            self.racer_widgets[2].update_info_udp(distance, speed, time)
+        http_responser.response_data = self._info.to_dict()
+        
         
     def start_server(self):
         self.udp_recieve_thread = threading.Thread(target=self.recieve_udp_packets)
@@ -86,7 +91,9 @@ class MainWindow(MainWindowBase):
         
         if self._info.is_status_countdown and elapsed_time >= 3000:
             self.race_status_edit.setText('go')
+            self._info.race_status = 'go'
             self.start_time = datetime.now()
+            send_udp_to_trainer(self._info)
         
         if self._info.is_status_running:
             for racerWidget in self.racer_widgets:
@@ -96,7 +103,6 @@ class MainWindow(MainWindowBase):
     def add_buttons(self, layout):
         self.ready_button = QPushButton('Ready - на старт')
         self.ready_button.clicked.connect(self.status_ready)
-
 
         self.go_button = QPushButton('Go - гонка')
         self.go_button.clicked.connect(self.status_go)
@@ -110,31 +116,31 @@ class MainWindow(MainWindowBase):
         row.addWidget(self.finish_button)
         layout.addLayout(row)
         
-        
     def reconnect(self):
         pass
         
     def status_ready(self):
-       # send_udp_to_trainer(PAUSE_COMMAND, self._info)
         self.race_status_edit.setText('ready')
         self.timer.stop() 
         self.timer_edit.setText('0')
         for racerWidget in self.racer_widgets:
             racerWidget.reset()
         self.send_info()
-        
+        send_udp_to_trainer(self._info)
+
     def status_go(self):
-        #send_udp_to_trainer(START_COMMAND, self._info)
         self.race_status_edit.setText('countdown')
         self.start_time = datetime.now() # Сохраняем время открытия окна
-        self.timer.start(10)
+        self.timer.start(1)
+        self.send_info()
+        send_udp_to_trainer(self._info)
     
     def status_finish(self):
-        #send_udp_to_trainer(FINISH_COMMAND, self._info)
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()
-        
+        send_udp_to_trainer(self._info)
+
     def send_extra_info(self, info):
         for racerWidget in self.racer_widgets:
             racerWidget.distance = info['distance']
@@ -151,7 +157,6 @@ class MainWindow(MainWindowBase):
     def stop_httpd_server(self):
         if self.httpd_server is not None:
             self.httpd_server.shutdown()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

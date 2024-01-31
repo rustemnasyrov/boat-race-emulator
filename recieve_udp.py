@@ -24,7 +24,11 @@ def receive_udp_from_trainer(update_func):
     print("Listening for UDP packets on {}:{}".format(UDP_IP, UDP_PORT))
     str_format = '<BBBBBBBBiBBHfff'
     while True:
-        data, addr = sock.recvfrom(1024)  # Буфер 1024 байта, вы можете увеличить его при необходимости
+        try:
+            data, addr = sock.recvfrom(10240)  # Буфер 1024 байта, вы можете увеличить его при необходимости
+        except:
+            print ("Error")
+
         received_byte = struct.unpack(str_format, data)
         if(len(received_byte) != 15):
             continue
@@ -44,8 +48,6 @@ def receive_udp_from_trainer(update_func):
         time = received_byte[TIME_BYTES]
         distance = received_byte[DISTANCE_BYTES]
         speed = received_byte[SPEED_BYTES]
-        print(str(id) + " " + str(time))
-        print(received_byte)
         update_func(lane, id, state, distance, time, speed)
 
 
