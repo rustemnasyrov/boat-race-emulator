@@ -155,6 +155,7 @@ class MainWindowBase(QWidget):
         if self.server_thread is None:
             return
         
+        
         self.server_thread.cleanup()
         self.server_thread.terminate()
         self.server_thread.wait()
@@ -165,7 +166,7 @@ class MainWindowBase(QWidget):
                 
     def closeEvent(self, event):
         self.stop_server()
-        return super().closeEvent(event)
+   
 
 
 

@@ -1,6 +1,6 @@
 import logging
 
-_main_logger = None
+_logger = None
 
 def create_logger(filename, use_formatter = True):
     # Создаем объект логгера
@@ -24,18 +24,17 @@ def create_logger(filename, use_formatter = True):
 
     # Добавляем обработчик к логгеру
     logger.addHandler(file_handler)
-    return logger
-    
-def main_logger():
-    global _main_logger
-    if not _main_logger:
-        _main_logger = create_logger('main.log')
-    return _main_logger
 
-if __name__ == '__main__':
-    main_logger().info('Test. Hello WOrld')
-    main_logger().info('Test2. Hello WOrld')
-    
-    
-    logger = create_logger('test.log', False)
-    logger.info('989898')    
+    return logger
+
+def get_logger():
+    global _logger
+    if not _logger:
+        _logger = create_logger('main.log')
+    return _logger
+
+
+def log_info(message):
+    get_logger().info(message)
+    pass
+
