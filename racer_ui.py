@@ -83,7 +83,7 @@ class RacerWidget(QWidget):
         self.distanceSlider.valueChanged[int].connect(self.changeDistance)
         
         self.auto_mode = QCheckBox('Авто', self)
-        self.auto_mode.setChecked(True)
+        self.auto_mode.setChecked(False)
 
         # создаем метку для отображения значения distance
         self.distanceLabel = QLabel('Distance: 0', self)
@@ -132,10 +132,12 @@ class RacerWidget(QWidget):
             dt = elapsed_time - self._racer_info.time
             self._racer_info.time = elapsed_time
             s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
-            self.distanceSlider.setValue(s)
+            self.distanceSlider.setValue(int(s))
             
     def reset(self):
         self._racer_info.time = 0
+        self._racer_info.speed = 0
+        self.sped_edit.setText('0')
         self.distanceSlider.setValue(0)
         
     def is_finished(self):

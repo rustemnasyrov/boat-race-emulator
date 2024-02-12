@@ -1,5 +1,5 @@
 import threading
-import time
+
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
 
 from main_send_ws import WebsocketSender
@@ -11,8 +11,7 @@ from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_C
 
 class HostWindow(MainWindowBase):
     id_to_ind = []
-    lanes = []
-    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 3}
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1}
     def __init__(self):
         super().__init__()
         self.receive_udp_packets = None
@@ -39,16 +38,9 @@ class HostWindow(MainWindowBase):
 
     def receive_udp_packets(self):
         receive_udp_from_trainer(self.process_udp_packet)
-    def send_udp_packets(self):
-        send_udp_to_trainer(self._info.race_status, self._info)
-
-
 
     def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
         # print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
-        if boat_id not in self.lanes:
-            print(str(boat_id) + " " + str(lane))
-            self.lanes.append(boat_id)
         if lane + 1 in self._info.tracks:
             track = self._info.tracks[lane + 1]
             track.trainer_id = boat_id
@@ -62,9 +54,6 @@ class HostWindow(MainWindowBase):
         self.udp_receive_thread = threading.Thread(target=self.receive_udp_packets)
         self.udp_receive_thread.start()
 
-        self.udp_send_thread = threading.Thread(target=self.send_udp_packets)
-        self.udp_send_thread.start()
-
         self.ws_sender= WebsocketSender('ws://31.129.102.190:8000/ws/simulators', self.info_to_send)
         self.ws_sender.start_send()
 
@@ -74,14 +63,15 @@ class HostWindow(MainWindowBase):
     def receive_info(self, data):
         if not data:
             return
+        print(data)
         race = data['active_race']
         status = self.status_str_to_int[race['status']]
-        distance = 200
+        distance = race['distance']
         self._info.set_distance_meters(distance)
-        print(distance)
         self._info.regatta_name = race['tournament_name']
         self._info.race_name = str(race['discipline_description'])
         self._info.race_status = race['status']
+
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
                 track = self._info.tracks[int(idx)]
@@ -96,21 +86,16 @@ class HostWindow(MainWindowBase):
 
 
     def status_ready(self):
-        self._info.race_status = 'three'
-        self.update_info()
-        send_udp_to_trainer('three', self.get_info_without_mutes())
+        self.send_info()
+        send_udp_to_trainer(PAUSE_COMMAND, self.get_info_without_mutes())
 
 
     def status_go(self):
-        self._info.race_status = 'go'
-        self.update_info()
-        send_udp_to_trainer('go', self.get_info_without_mutes())
+        send_udp_to_trainer(START_COMMAND, self.get_info_without_mutes())
 
 
     def status_finish(self):
-        self._info.race_status = 'finish'
-        self.update_info()
-        send_udp_to_trainer('finish', self.get_info_without_mutes())
+        send_udp_to_trainer(FINISH_COMMAND, self.get_info_without_mutes())
     def info_to_send(self):
         data = dict()
         for i in range(9):

@@ -37,22 +37,24 @@ def send_data(state, seconds, distance, data):
     data_to_send = struct.pack(str_format, header.encode('utf-8'), state, seconds, distance, n, *data)
     return data_to_send
 
-def send_udp_to_trainer(state_, info):
-
-    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':1 }
+def send_udp_to_trainer(info):
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':3, 'countdown':4 }
     data = []
     for i, track in info.tracks.items():
         if track.trainer_id != 0:
             data.append(track.trainer_id)
+            #упаковываем вес в байт
+            # Convert weight to bytes
             data.append(track.weight)
             data.append(track.age)
 
     print(info.race_status)
-    print(status_str_to_int[info.race_status])
+    print(data)
+
     data2 = send_data(status_str_to_int[info.race_status], 0, info.get_distance_meters(), data)
-    print(data2)
     if data2 != 0:
-        sock.sendto(data2, (UDP_IP, UDP_PORT))
+        for i in range(10):
+            sock.sendto(data2, (UDP_IP, UDP_PORT))
 
 
 if __name__ == '__main__':
