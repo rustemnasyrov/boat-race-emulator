@@ -5,8 +5,8 @@ import random
 #---   Это формат итогового пакета, который генерирется классами ниже
 #----------------------------------------------------------------
 info_dict = { 
-    'regatta' : 'Кубок', #Наименование турнира
-    'race' : "Мужчины", #Наименование заезда
+    'regatta' : 'НОВА РЕГАТТА', #Наименование турнира
+    'race' : "Открытый заезд", #Наименование заезда
     'race status' : 'ready', #ready - стоим на страте, готовы; go - выполнение заезда; finish - заезд окончен 
     'distance' : 100, #дистанция заезда в метрах
     'timer' : 0, #время в 10 долях секунд от начала старта. может время будет статусом?
@@ -21,8 +21,8 @@ info_dict = {
 #----------------------------------------------------------------
 
 names = ["Агафонова И.",
-         "Нерманова А.",
-         "Сергеева Н.",
+         "Михайлов А.",
+         "Васильев Н.",
          "Алексеева А.",
          "Смирнова Н.",
          "Кузнецова Н.",
@@ -111,8 +111,8 @@ class RegattaRaceModel:
         return int(self.distance / RacerModel.DISTANCE_MULTIPLAYER)
         
     def init_tracks(self):
-        for i in range(1, 10):
-            self.tracks[i] = RacerModel(names[i], round(random.uniform(4.1, 5.6),1), 0, 0)
+        for i in range(1, 3):
+            self.tracks[i] = RacerModel(names[i], 0, 0, 0)
 
     def add_track(self, line, dict):
         if line in self.tracks:
@@ -144,7 +144,7 @@ class RegattaRaceModel:
 
     @classmethod
     def default(cls):
-        return RegattaRaceModel('Кубок', 'Мужчины', 300)
+        return RegattaRaceModel('AAA CUP 2024', 'Открытый заезд', 50)
 
     def from_dict(self, race_dict):
         self.regatta_name = race_dict[self.REGATTA_NAME_KEY]
@@ -156,6 +156,7 @@ class RegattaRaceModel:
             self.add_track(int(i), track)
         
         return self
+    
 
 
 
