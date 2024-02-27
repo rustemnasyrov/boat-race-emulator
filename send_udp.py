@@ -6,9 +6,6 @@ START_COMMAND = 0
 PAUSE_COMMAND = 1
 FINISH_COMMAND = 2
 
-UDP_IP = "192.168.0.255"  # Широковещательный адрес
-UDP_PORT = 61111
-
 # Создаем сокет
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -21,7 +18,7 @@ def send_data(state, seconds, distance, data):
     # 10 - 13 seconds
     # 14 - 15 distance
     # 16 amount
-    header = 'BRTS100'
+    header = 'BRTS101'
     str_format = '<8sBIHB'
 
     # every 6 bytes describe
@@ -37,7 +34,7 @@ def send_data(state, seconds, distance, data):
     data_to_send = struct.pack(str_format, header.encode('utf-8'), state, seconds, distance, n, *data)
     return data_to_send
 
-def send_udp_to_trainer(info):
+def send_udp_to_trainer(info, udp_address = ("192.168.137.255", 61111)):
     status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':3, 'countdown':4 }
     data = []
     for i, track in info.tracks.items():
@@ -54,7 +51,7 @@ def send_udp_to_trainer(info):
     data2 = send_data(status_str_to_int[info.race_status], 0, info.get_distance_meters(), data)
     if data2 != 0:
         for i in range(10):
-            sock.sendto(data2, (UDP_IP, UDP_PORT))
+            sock.sendto(data2, udp_address)
 
 
 if __name__ == '__main__':

@@ -25,6 +25,8 @@ pygame.init()
 class MainWindow(MainWindowBase):
     start_time = datetime.now() # Сохраняем время открытия окна
     http_server_address = ('127.0.0.1', 8888)
+    udp_address = ("192.168.137.1", 62222)
+    udp_send_address = ("192.168.137.255", 61111)
     httpd_server = None
     tick_period = 10
     is_fresh_data = [False, False, False, False, False, False, False, False]
@@ -84,9 +86,9 @@ class MainWindow(MainWindowBase):
         self.httpd_server.serve_forever()
 
     def recieve_udp_packets(self):
-        receive_udp_from_trainer(self.process_udp_packet)
+        receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
-    def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
+    def process_udp_packet(self, lane, boat_id, state, distance, time, speed,  acceleration, boatTime):
       
         if lane in self._info.tracks:
             track = self._info.tracks[lane]
@@ -95,7 +97,7 @@ class MainWindow(MainWindowBase):
             if self._info.is_status_running:
                 track.set_distance_meters(distance)
                 #self.logger.info('udp_distance: ' + str(distance))
-                track.time = int(time * 1000)
+                track.time = int(boatTime * 1000)
                 track.set_speed_meters_sec(speed)
                 
                 self.is_fresh_data[lane] = True
@@ -185,7 +187,7 @@ class MainWindow(MainWindowBase):
             self._info.race_status = 'go'
             self.start_time = datetime.now()
             self.play_horn()
-            send_udp_to_trainer(self._info)
+            send_udp_to_trainer(self._info, self.udp_send_address)
         
         if self._info.is_status_running:
             for racerWidget in self.racer_widgets:
@@ -218,20 +220,20 @@ class MainWindow(MainWindowBase):
         for racerWidget in self.racer_widgets:
             racerWidget.reset()
         self.send_info()
-        send_udp_to_trainer(self._info)
+        send_udp_to_trainer(self._info, self.udp_send_address)
 
     def status_go(self):
         self.race_status_edit.setText('countdown')
         self.start_time = datetime.now() # Сохраняем время открытия окна
         self.timer.start(self.tick_period)
         self.send_info()
-        send_udp_to_trainer(self._info)
+        send_udp_to_trainer(self._info, self.udp_send_address)
     
     def status_finish(self):
         self.race_status_edit.setText('finish')
         self.timer.stop()
         self.send_info()
-        send_udp_to_trainer(self._info)
+        send_udp_to_trainer(self._info, self.udp_send_address)
 
     def send_extra_info(self, info):
         for racerWidget in self.racer_widgets:
