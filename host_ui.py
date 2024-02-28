@@ -6,16 +6,59 @@ from get_reponser import GetResponser
 from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
 import sys
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 
 from recieve_udp import receive_udp_from_trainer
 from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_COMMAND
+from datetime import datetime, time
 
 class HostWindow(MainWindowBase):
     id_to_ind = []
-    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1}
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'ready': 1}
+
+    ws_address = 'ws://192.168.0.104:8000/ws/'
+    udp_address = ("0.0.0.0", 62222)
+    udp_send_address = ("192.168.0.255", 61111)
+    ws_send_addr = ''
+    tick_period = 10
+
     def __init__(self):
         super().__init__()
         self.receive_udp_packets = None
+
+        self.ws_send_addr = self.ws_address + 'simulators'
+        self.ws_recv_addr = self.ws_address + 'commands'
+
+        # Создаем таймер и подключаем его к слоту
+        self.timer = None #time.Timer(self.tick_period, self.update_func)
+        #self.timer.timeout.connect(self.update_func)
+
+    def update_func(self):
+        current_time = datetime.now()
+        elapsed_time = int((current_time - self.start_time).total_seconds() * 1000)
+        self.tick(elapsed_time)
+        if self._info.is_status_running:
+            self._info.timer = elapsed_time
+       # self.update_tracks()
+        self.send_info()
+       # is_all_finished = all(racerWidget.is_finished() for racerWidget in self.racer_widgets)
+
+        #if is_all_finished:
+         #   self.status_finish()
+        
+    def tick(self, elapsed_time):
+        self.timer_edit.setText(str(elapsed_time)) # Отображаем время в момент обновления 
+        
+        if self._info.is_status_countdown and elapsed_time >= 2900:
+           # self.race_status_edit.setText('go')
+           # self._info.race_status = 'go'
+            self.start_time = datetime.now()
+            self.play_horn()
+            send_udp_to_trainer(self._info, self.udp_send_address)
+        
+        if self._info.is_status_running:
+            for racerWidget in self.racer_widgets:
+                racerWidget.tick(elapsed_time)
 
 
     def add_buttons(self, layout):
@@ -37,7 +80,7 @@ class HostWindow(MainWindowBase):
 
 
     def receive_udp_packets(self):
-        receive_udp_from_trainer(self.process_udp_packet)
+        receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
     def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
         # print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
@@ -54,10 +97,10 @@ class HostWindow(MainWindowBase):
         self.udp_receive_thread = threading.Thread(target=self.receive_udp_packets)
         self.udp_receive_thread.start()
 
-        self.ws_sender= WebsocketSender('ws://31.129.102.190:8000/ws/simulators', self.info_to_send)
+        self.ws_sender= WebsocketSender('ws://192.168.0.104:8000/ws/simulators', self.info_to_send)
         self.ws_sender.start_send()
 
-        self.ws_receiver = WebsocketSender('ws://31.129.102.190:8000/ws/commands', self.receive_info)
+        self.ws_receiver = WebsocketSender('ws://192.168.0.104:8000/ws/commands', self.receive_info)
         self.ws_receiver.start_receive()
         
         self.get_responser = GetResponser.start_thread()
@@ -75,9 +118,16 @@ class HostWindow(MainWindowBase):
         status = self.status_str_to_int[race['status']]
         distance = race['distance']
         self._info.set_distance_meters(distance)
-        self._info.regatta_name = race['tournament_name']
-        self._info.race_name = str(race['discipline_description'])
+        self._info.regatta_name = race['tournament_title']
+        self._info.race_name = str(race['discipline_title'])
         self._info.race_status = race['status']
+
+        if self._info.race_status == 'go':
+            self.status_go()
+        elif self._info.race_status == 'finish':
+            self.status_finish()
+        elif self._info.race_status == 'ready':
+            self.status_ready()
 
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
@@ -86,31 +136,34 @@ class HostWindow(MainWindowBase):
                 track.weight = value['weight']
                 track.age = value['age']
 
-        send_udp_to_trainer(status, self.get_info_without_mutes())
+        send_udp_to_trainer(self._info, self.udp_send_address)
 
         self.update_info()
+    
+    def status_finish(self):
+        self.race_status_edit.setText('finish')
+        #self.timer.stop()
 
     def status_ready(self):
-        
+        #self.timer.stop() 
+        self.timer_edit.setText('0')
+        for racerWidget in self.racer_widgets:
+            racerWidget.reset()
         self.send_info()
-        send_udp_to_trainer(PAUSE_COMMAND, self.get_info_without_mutes())
-
 
     def status_go(self):
-        send_udp_to_trainer(START_COMMAND, self.get_info_without_mutes())
+        self.start_time = datetime.now() # Сохраняем время открытия окна
+        #self.timer.start(self.tick_period)
+
 
 
     def status_finish(self):
-        send_udp_to_trainer(FINISH_COMMAND, self.get_info_without_mutes())
+        send_udp_to_trainer(self.get_info_without_mutes(), self.udp_send_address)
+    
     def info_to_send(self):
         data = dict()
-        for i in range(9):
-            new_d = dict()
-            new_d['time'] = self.racer_widgets[i]._racer_info.time
-            new_d['speed'] = self.racer_widgets[i]._racer_info.speed
-            new_d['distance'] = self.racer_widgets[i]._racer_info.distance
-            new_d['state'] = False
-            data[str(i+1)] = new_d
+        for i in range(0, len(self.racer_widgets)):
+            data[str(i+1)] = self.racer_widgets[i].racer_info.as_dict(False)
         return data
     
     def closeEvent(self, event):

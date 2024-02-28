@@ -55,10 +55,10 @@ class WebsocketSender:
                 # Отправляем JSON-данные на вэб-сокет
                 data = self.data_function()
                 self.ws.send(json.dumps(data))
-                time.sleep(2)
+                time.sleep(0.01)
             except Exception as e:
                 print('Websocket send error {}'.format(e))
-                time.sleep(5)
+                time.sleep(0.01)
                 self.ws = None
         
         self.close()
@@ -77,7 +77,7 @@ class WebsocketSender:
                 self.data_function(json_data)
             except Exception as e:
                 print('Websocket receive error {}'.format(e))
-                time.sleep(5)
+                time.sleep(0.05)
                 self.ws = None
 
 
@@ -85,14 +85,20 @@ def send_data():
     return data
 
 def receive_data(data):
-    cur = data['simulators']
-    for i in (data['simulators']):
+    cur = data.get('simulators', [])
+    if cur:
+        print(cur)
+    for i in (cur):
         print(cur[i]['fio'])
+
+    race_dict = data.get('active_race', {})
+    if race_dict:
+        print(race_dict)
 
 # Запускаем функцию отправки данных в отдельном потоке
 if __name__ == '__main__':
-    t = WebsocketSender('ws://31.129.102.190:8000/ws/simulators', send_data)
-    t.start_send()
-    t = WebsocketSender('ws://31.129.102.190:8000/ws/commands', receive_data)
+    #t = WebsocketSender('ws://192.168.0.104:8000/ws/simulators', send_data)
+    #t.start_send()
+    t = WebsocketSender('ws://192.168.0.104:8000/ws/commands', receive_data)
     t.start_receive()
 
