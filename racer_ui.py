@@ -149,6 +149,7 @@ class RacerWidget(QWidget):
         self._racer_info.speed = 0
         self.sped_edit.setText('0')
         self.distanceSlider.setValue(0)
+        self.auto_mode.setChecked(False)
         
     def is_finished(self):
         return self._racer_info.get_distance_meters() >= self._distance 

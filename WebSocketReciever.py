@@ -24,7 +24,10 @@ class WebSocketReciever(QThread):
         self.ws.run_forever()
 
     def send_message(self, message):
-        self.ws.send(json.dumps(message))
+        try:
+            self.ws.send(json.dumps(message))
+        except Exception as e:
+            print(e)
         
         
 #### --- test here -----
