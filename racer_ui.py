@@ -1,3 +1,4 @@
+import random
 from PyQt5.QtGui import QResizeEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QLineEdit, QCheckBox
 from PyQt5.QtCore import Qt
@@ -72,6 +73,7 @@ class RacerWidget(QWidget):
         self.speedLabel = QLabel('Скорость:', self)
         self.sped_edit = QLineEdit()
         self.sped_edit.setMaximumHeight(20)
+        self.sped_edit.textChanged.connect(self.on_speed_changed)
 
         # создаем слайдер для выбора значения distance
         self.distanceSlider = QSlider(Qt.Horizontal, self)
@@ -84,6 +86,7 @@ class RacerWidget(QWidget):
         
         self.auto_mode = QCheckBox('Авто', self)
         self.auto_mode.setChecked(False)
+        self.auto_mode.stateChanged.connect(self.toggle_auto)
 
         # создаем метку для отображения значения distance
         self.distanceLabel = QLabel('Distance: 0', self)
@@ -112,7 +115,10 @@ class RacerWidget(QWidget):
         self._racer_info.distance = value 
         self.distanceLabel.setText('Пройдено: {:07.2f} м из {} за {} c'.format(self._racer_info.get_distance_meters(), self._distance, self._racer_info.time))
 
-
+    def toggle_auto(self):
+        if self.auto_mode.isChecked() and not self.racer_info.speed:
+            self.sped_edit.setText(str(round(random.uniform(4.1, 5.6),1)))
+        
     def update_info_udp(self, distance, speed, time):
         self.racer_info.set_distance_meters(distance)
         self.racer_info.set_speed_meters_sec(speed)
@@ -126,6 +132,10 @@ class RacerWidget(QWidget):
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
         self.lineLabel.setText('Линия: {}'.format(self._line))
         self.distanceSlider.setValue(self._racer_info.distance )
+        
+    def on_speed_changed(self):
+        if self.auto_mode.isChecked(): 
+            self.read_speed_from_ui()
         
     def tick(self, elapsed_time):
         if self.auto_mode.isChecked() and not self.is_finished():
@@ -146,6 +156,10 @@ class RacerWidget(QWidget):
     def send_info(self):
         self._racer_info.racer = self.name_edit.text()
         self._racer_info.weight = int(self.weight_edit.text() or '60')
+        self.read_speed_from_ui()
+        self._racer_info.distance = self.distanceSlider.value()
+
+    def read_speed_from_ui(self):
         try:
             if self.sped_edit is not None:
                 text = self.sped_edit.text() or '0'
@@ -154,7 +168,6 @@ class RacerWidget(QWidget):
             # Handle the case where the text cannot be converted to a float
             # For example, display an error message or set a default value.
             pass
-        self._racer_info.distance = self.distanceSlider.value()
 
 
     def add_info_to(self, dict):

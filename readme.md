@@ -30,3 +30,15 @@
 [Файл recieve_test_ui.py](recieve_test_ui.py)
 
 Тестовый клиент получающий данные по TCP/IP порт localhost:5555
+
+[Как подключить к мобильному хотспоту больше 8 устройств]
+
+First press Win+R key on your keyboard, then type ''regedit'' and press enter. It will open windows registry editor.
+Copy line below and paste it in the textbox then press enter:
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\icssvc\Settings
+
+Right click on an empty space in the right side and choose New/ DWORD (32bit) Value
+Name the value ''WifiMaxPeers''
+Double click on it and choose decimal, then put the value whatever you want to.
+At last press ok and restart your pc.
+Well done!

@@ -1,3 +1,4 @@
+import pygame
 from dialog_ip_port_editor import IpPortDialog
 from racer_ui import RacerModel, RacerWidget
 import regatta
@@ -15,6 +16,11 @@ class MainWindowBase(QWidget):
 
     def __init__(self):
         super().__init__()
+        
+        # Загрузка звукового файла
+        pygame.init()
+        sound_file = "horn.wav"  # Укажите путь к вашему звуковому файлу
+        pygame.mixer.music.load(sound_file)
         
         self.dict = self._info.to_dict()
 
@@ -101,6 +107,10 @@ class MainWindowBase(QWidget):
         for control in controls:
             getattr(self, control).textChanged.connect(self.send_info)
 
+    def play_horn(self):
+        # Воспроизведение звука
+        pygame.mixer.music.play()
+        
     def add_buttons(self, layout):
         self.send_button = QPushButton('Отправить')
         self.send_button.clicked.connect(self.send_info)

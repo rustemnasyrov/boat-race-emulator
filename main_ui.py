@@ -20,7 +20,6 @@ from racer_ui import RacerModel, RacerWidget
 from recieve_udp import receive_udp_from_trainer, stop_udp_recieve
 from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_COMMAND
 
-pygame.init()
 
 class MainWindow(MainWindowBase):
     start_time = datetime.now() # Сохраняем время открытия окна
@@ -43,13 +42,6 @@ class MainWindow(MainWindowBase):
 
         self.create_logger()
 
-        # Загрузка звукового файла
-        sound_file = "horn.wav"  # Укажите путь к вашему звуковому файлу
-        pygame.mixer.music.load(sound_file)
-
-    def play_horn(self):
-        # Воспроизведение звука
-        pygame.mixer.music.play()
 
     def create_logger(self):
         # Создаем объект логгера
