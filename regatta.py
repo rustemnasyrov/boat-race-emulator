@@ -111,7 +111,7 @@ class RegattaRaceModel:
         return int(self.distance / RacerModel.DISTANCE_MULTIPLAYER)
         
     def init_tracks(self):
-        for i in range(1, 3):
+        for i in range(1, 6):
             self.tracks[i] = RacerModel(names[i], 0, 0, 0)
 
     def add_track(self, line, dict):

@@ -1,14 +1,11 @@
 import threading
-
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
 from WebSocketReciever import WebSocketReciever
 from get_reponser import GetResponser
-
 from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
 import sys
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-
 from recieve_udp import receive_udp_from_trainer
 from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_COMMAND
 from datetime import datetime, time
@@ -17,68 +14,44 @@ class HostWindow(MainWindowBase):
     id_to_ind = []
     status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'ready': 1}
 
-    ws_address = 'ws://82.97.247.48:8000/ws/'
+    ws_address = 'ws://82.97.247.48:8000/ws/tst'
     udp_address = ("0.0.0.0", 62222)
     udp_send_address = ("192.168.0.255", 61111)
     ws_send_addr = ''
     tick_period = 10
 
     def __init__(self):
+
         super().__init__()
+        
         self.receive_udp_packets = None
 
-        self.ws_send_addr = self.ws_address + 'simulators'
-        self.ws_recv_addr = self.ws_address + 'commands'
-
         # Создаем таймер и подключаем его к слоту
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_func)
+        self.race_timer = QTimer()
+        self.race_timer.timeout.connect(self.update_race_data)
+        
+        self.ws_send_timer = QTimer()
+        self.ws_send_timer.timeout.connect(self.send_data_to_ws)
+        self.ws_send_timer.start(10)
 
-    def update_func(self):
+    def update_race_data(self):
         current_time = datetime.now()
         elapsed_time = int((current_time - self.start_time).total_seconds() * 1000)
         self.tick(elapsed_time)
         if self._info.is_status_running:
             self._info.timer = elapsed_time
-       # self.update_tracks()
-       # self.send_info()
-       # is_all_finished = all(racerWidget.is_finished() for racerWidget in self.racer_widgets)
 
-        #if is_all_finished:
-         #   self.status_finish()
         
     def tick(self, elapsed_time):
-        self.timer_edit.setText(str(elapsed_time)) # Отображаем время в момент обновления 
-        
-        if self._info.is_status_countdown and elapsed_time >= 2900:
-           # self.race_status_edit.setText('go')
-           # self._info.race_status = 'go'
-            self.start_time = datetime.now()
-            self.play_horn()
-            send_udp_to_trainer(self._info, self.udp_send_address)
+        self.timer_edit.setText(str(elapsed_time)) 
         
         if self._info.is_status_running:
             for racerWidget in self.racer_widgets:
                 racerWidget.tick(elapsed_time)
-
-
-    def add_buttons(self, layout):
-        self.ready_button = QPushButton('Ready - на старт')
-        self.ready_button.clicked.connect(self.status_ready)
-
-        self.go_button = QPushButton('Go - гонка')
-        self.go_button.clicked.connect(self.status_go)
-
-        self.finish_button = QPushButton('Finish - завершить гонку')
-        self.finish_button.clicked.connect(self.status_finish)
-
-        row = QHBoxLayout()
-        row.addWidget(self.ready_button)
-        row.addWidget(self.go_button)
-        row.addWidget(self.finish_button)
-        layout.addLayout(row)
-
-
+                
+    def send_data_to_ws(self):
+        data = self.info_to_send()
+        self.thread.send_message(data)
 
     def receive_udp_packets(self):
         receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
@@ -97,30 +70,19 @@ class HostWindow(MainWindowBase):
     def start_server(self):
         self.udp_receive_thread = threading.Thread(target=self.receive_udp_packets)
         self.udp_receive_thread.start()
-
-        self.ws_sender= WebsocketSender('ws://192.168.0.104:8000/ws/simulators', self.info_to_send)
-        self.ws_sender.start_send()
         
-        self.thread = WebSocketReciever('ws://82.97.247.48:8000/ws/commands')
-        self.thread.data_received.connect(self.receive_info)
+        self.thread = WebSocketReciever(self.ws_address)
+        self.thread.data_received.connect(self.receive_server_info)
         self.thread.start()
         
         self.get_responser = GetResponser.start_thread()
         self.get_responser.set_data(self._info.to_dict())
-
-    def send_info_safe(self):
-        super().send_info_safe()
-        self.get_responser.set_data(self._info.to_dict())
         
-    def update_label(self, data):
-        print(data)
-        
-    def receive_info(self, data):
+    def receive_server_info(self, data):
         if not data:
             return
         print(data)
         race = data['active_race']
-        #status = self.status_str_to_int[race['status']]
         distance = race['distance']
         self._info.set_distance_meters(distance)
         self._info.regatta_name = race['tournament_title']
@@ -140,7 +102,7 @@ class HostWindow(MainWindowBase):
         
         if self._info.race_status == 'go':
             self.status_go()
-        elif self._info.race_status == 'finish':
+        elif self._info.race_status == 'finish' or self._info.race_status == 'stop':
             self.status_finish()
         elif self._info.race_status == 'countdown':
             self.status_countdown()
@@ -148,12 +110,11 @@ class HostWindow(MainWindowBase):
             self.status_ready()
             
     def status_countdown(self):
-        self.start_timer()        
+        self.start_race_timer()        
     
     def status_finish(self):
         self.race_status_edit.setText('finish')
-        self.timer.stop()
-        send_udp_to_trainer(self.get_info_without_mutes(), self.udp_send_address)
+        self.race_timer.stop()
 
     def status_ready(self):
         self.timer_edit.setText('0')
@@ -161,13 +122,13 @@ class HostWindow(MainWindowBase):
             racerWidget.reset()
 
     def status_go(self):
-        self.timer.stop()
+        self.race_timer.stop()
         self.play_horn()
-        self.start_timer() 
+        self.start_race_timer() 
 
-    def start_timer(self):
+    def start_race_timer(self):
         self.start_time = datetime.now() # Сохраняем время открытия окна
-        self.timer.start(self.tick_period)      
+        self.race_timer.start(self.tick_period)      
     
     def info_to_send(self):
         data = dict()
@@ -176,7 +137,6 @@ class HostWindow(MainWindowBase):
         return data
     
     def closeEvent(self, event):
-        
         self.get_responser.stop()
         
         return super().closeEvent(event)    
