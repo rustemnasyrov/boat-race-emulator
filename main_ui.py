@@ -80,7 +80,7 @@ class MainWindow(MainWindowBase):
     def recieve_udp_packets(self):
         receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
-    def process_udp_packet(self, lane, boat_id, state, distance, time, speed,  acceleration, boatTime):
+    def process_udp_packet(self, lane, boat_id, packetNumber, state, distance, time, speed,  acceleration, boatTime, addr):
       
         if lane in self._info.tracks:
             track = self._info.tracks[lane]
@@ -149,7 +149,7 @@ class MainWindow(MainWindowBase):
         
         self.update_info()
         http_responser.response_data = self._info.to_dict()
-        log_info(f'update: track - {track_num} {int(track.time)} {track.speed} {track.distance} {comment}')
+        #log_info(f'update: track - {track_num} {int(track.time)} {track.speed} {track.distance} {comment}')
         #log_info('---------------------------------------------------------------------------------------->>')  
 
     def update_tracks(self):
