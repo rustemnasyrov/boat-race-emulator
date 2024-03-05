@@ -50,7 +50,7 @@ def send_udp_to_trainer(info, udp_address = ("192.168.137.255", 61111)):
 
     data2 = send_data(status_str_to_int[info.race_status], 0, info.get_distance_meters(), data)
     if data2 != 0:
-        for i in range(10):
+        for i in range(15):
             sock.sendto(data2, udp_address)
 
 

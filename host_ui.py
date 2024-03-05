@@ -40,7 +40,7 @@ class HostWindow(MainWindowBase):
         current_time = datetime.now()
         elapsed_time = int((current_time - self.start_time).total_seconds() * 1000)
         self.tick(elapsed_time)
-        if self._info.is_status_running:
+        if self._info.is_status_running or self._info.is_status_countdown:
             self._info.timer = elapsed_time
 
         
@@ -59,14 +59,14 @@ class HostWindow(MainWindowBase):
     def receive_udp_packets(self):
         receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
-    def process_udp_packet(self, lane, boat_id, packetNumber, state, distance, time, speed,  acceleration, boatTime, addr):
-        # print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
-        if lane + 1 in self._info.tracks:
-            track = self._info.tracks[lane + 1]
-            track.trainer_id = boat_id
-            track.set_distance_meters(distance)
-            track.time = int(boatTime * 1000)
-            track.set_speed_meters_sec(speed)
+    def process_udp_packet(self, udp_packet):
+        if udp_packet.lane in self._info.tracks:
+            track = self._info.tracks[udp_packet.lane]
+            track.trainer_id = udp_packet.id
+            track.set_distance_meters(udp_packet.distance)
+            track.time = int(udp_packet.boatTime * 1000) 
+            track.set_speed_meters_sec(udp_packet.speed)
+            track.stroke_rate = udp_packet.strokeRate
 
         self.update_info()
 
@@ -92,7 +92,7 @@ class HostWindow(MainWindowBase):
         self._info.set_distance_meters(distance)
         self._info.regatta_name = race['tournament_title']
         self._info.race_name = str(race['discipline_title'])
-        self._info.race_status = race['status']
+        self._info.race_status = race['status'] if race['status'] != 'stop' else 'finish'
 
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
@@ -122,6 +122,8 @@ class HostWindow(MainWindowBase):
         self.race_timer.stop()
 
     def status_ready(self):
+        self.race_timer.stop()
+        self._info.timer = 0
         self.timer_edit.setText('0')
         for racerWidget in self.racer_widgets:
             racerWidget.reset()
