@@ -41,6 +41,7 @@ class RacerModel:
     RC_SPEED_KEY = 'speed'
     RC_DISTANCE_KEY = 'distance'
     RC_TIME_KEY = 'time'
+    RC_STROKE_RATE_KEY = 'stroke_rate' 
     
     DISTANCE_MULTIPLAYER = 1000
     
@@ -52,6 +53,7 @@ class RacerModel:
         self.weight = 60
         self.age = 15
         self.trainer_id = 0
+        self.stroke_rate = 220
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -67,7 +69,7 @@ class RacerModel:
         return self.speed / self.DISTANCE_MULTIPLAYER
         
     def as_dict(self, with_racer=True):
-        result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time}
+        result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time, self.RC_STROKE_RATE_KEY: self.stroke_rate}
         if with_racer:
             result[self.RC_RACER_KEY] = self.racer
         return result
@@ -77,6 +79,7 @@ class RacerModel:
         self.speed = int(dict[self.RC_SPEED_KEY])
         self.distance = int(dict[self.RC_DISTANCE_KEY])
         self.time = int(dict[self.RC_TIME_KEY])
+        self.stroke_rate = int(dict[self.RC_STROKE_RATE_KEY])
         return self
     
 class RegattaRaceModel:
