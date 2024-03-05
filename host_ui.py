@@ -1,7 +1,9 @@
-import threading
+from http.client import HTTPResponse
+from http.server import HTTPServer
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
 from WebSocketReciever import WebSocketReciever
 from get_reponser import GetResponser
+from http_responser import MyHandler
 from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
 import sys
@@ -52,31 +54,34 @@ class HostWindow(MainWindowBase):
     def send_data_to_ws(self):
         data = self.info_to_send()
         self.thread.send_message(data)
+        self.get_responser.set_data(self._info.to_dict())
 
     def receive_udp_packets(self):
         receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
-    def process_udp_packet(self, lane, boat_id, state, distance, time, speed):
+    def process_udp_packet(self, lane, boat_id, packetNumber, state, distance, time, speed,  acceleration, boatTime, addr):
         # print(f"id:{boat_id}, state: {state}, distance: {distance}, lane: {lane}")
         if lane + 1 in self._info.tracks:
             track = self._info.tracks[lane + 1]
             track.trainer_id = boat_id
             track.set_distance_meters(distance)
-            track.time = time
+            track.time = int(boatTime * 1000)
             track.set_speed_meters_sec(speed)
 
         self.update_info()
 
     def start_server(self):
-        self.udp_receive_thread = threading.Thread(target=self.receive_udp_packets)
-        self.udp_receive_thread.start()
-        
         self.thread = WebSocketReciever(self.ws_address)
         self.thread.data_received.connect(self.receive_server_info)
         self.thread.start()
         
-        self.get_responser = GetResponser.start_thread()
+        self.get_responser = GetResponser(self.thread)
         self.get_responser.set_data(self._info.to_dict())
+        self.get_responser.start()
+
+        self.udp_receive_thread = QThread(self.thread)
+        self.udp_receive_thread.run = self.receive_udp_packets
+        self.udp_receive_thread.start()
         
     def receive_server_info(self, data):
         if not data:

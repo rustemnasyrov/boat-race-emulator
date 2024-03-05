@@ -43,6 +43,7 @@ def receive_udp_from_trainer(update_func,  udp_address = ("192.168.137.1", 62222
             continue
 
         update_func(lane, id, packetNumber, state, distance, race_time, speed, acceleration, boatTime, addr)
+        time.sleep(0.001)
 
        # timestamp_ms = int((time.time() - start_time) * 1000) 
        # udp_logger.info(f'{timestamp_ms} {id} {packetNumber} {state} {int(race_time*1000)} {int(boatTime * 1000)} {int(distance*1000)} {int(speed*1000)} {int(acceleration * 1000)}')
