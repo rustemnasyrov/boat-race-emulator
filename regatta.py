@@ -39,6 +39,7 @@ names = ["Агафонова И.",
 class RacerModel:
     RC_RACER_KEY = 'racer'
     RC_SPEED_KEY = 'speed'
+    RC_ACCEL_KEY = 'accel'
     RC_DISTANCE_KEY = 'distance'
     RC_TIME_KEY = 'time'
     RC_STROKE_RATE_KEY = 'stroke_rate' 
@@ -53,7 +54,8 @@ class RacerModel:
         self.weight = 60
         self.age = 15
         self.trainer_id = 0
-        self.stroke_rate = 220
+        self.stroke_rate = 0
+        self.acceleration = 0
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -67,9 +69,17 @@ class RacerModel:
         self.speed = int(speed * self.DISTANCE_MULTIPLAYER)
     def get_speed_meters_sec(self):
         return self.speed / self.DISTANCE_MULTIPLAYER
+    
+    def set_acceleration_meters_sec2(self, acceleration):
+        self.acceleration = int(acceleration * self.DISTANCE_MULTIPLAYER) 
+
+    def get_acceleration_meters_sec2(self):
+        return self.acceleration / self.DISTANCE_MULTIPLAYER
         
     def as_dict(self, with_racer=True):
-        result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time, self.RC_STROKE_RATE_KEY: self.stroke_rate}
+        result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time, 
+                  self.RC_STROKE_RATE_KEY: self.stroke_rate,
+                  self.RC_ACCEL_KEY: self.acceleration}
         if with_racer:
             result[self.RC_RACER_KEY] = self.racer
         return result

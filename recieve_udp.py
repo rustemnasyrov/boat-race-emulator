@@ -28,7 +28,7 @@ udp_logger = create_logger('udp.log', use_formatter=False)
 start_time =  time.time()
 
 
-def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 62222)):
+def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
     global stop_udp_flag
 
     UDP_IP = udp_address[0]

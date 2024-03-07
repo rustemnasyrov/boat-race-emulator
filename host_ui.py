@@ -66,8 +66,9 @@ class HostWindow(MainWindowBase):
             track.set_distance_meters(udp_packet.distance)
             track.time = int(udp_packet.boatTime * 1000) 
             track.set_speed_meters_sec(udp_packet.speed)
-            track.stroke_rate = udp_packet.strokeRate
-
+            track.stroke_rate = int(udp_packet.strokeRate / 2)
+            track.set_acceleration_meters_sec2(udp_packet.acceleration)
+            
         self.update_info()
 
     def start_server(self):
@@ -91,7 +92,7 @@ class HostWindow(MainWindowBase):
         distance = race['distance']
         self._info.set_distance_meters(distance)
         self._info.regatta_name = race['tournament_title']
-        self._info.race_name = str(race['discipline_title'])
+        self._info.race_name = str(race['discipline_title']) + ', ' + str(race['race_title'])
         self._info.race_status = race['status'] if race['status'] != 'stop' else 'finish'
 
         for idx, value in data['simulators'].items():
