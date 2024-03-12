@@ -35,7 +35,7 @@ def send_data(state, seconds, distance, data):
     return data_to_send
 
 def send_udp_to_trainer(info, udp_address = ("192.168.137.255", 61111)):
-    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':3, 'countdown':4, 'stop': 2 }
+    status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'on_start': 1, 'ready':3, 'countdown':4, 'stop': 2, None: 2 }
     data = []
     for i, track in info.tracks.items():
         if track.trainer_id != 0:
