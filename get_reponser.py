@@ -12,6 +12,8 @@ class GetResponser(QThread):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._data = None
+        #Выбрать критический приоритет
+        self.setPriority(QThread.TimeCriticalPriority)
         
     @pyqtSlot()
     def run(self):

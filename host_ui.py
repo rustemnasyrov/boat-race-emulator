@@ -17,8 +17,8 @@ class HostWindow(MainWindowBase):
     status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'ready': 1}
 
     ws_address = 'ws://82.97.247.48:8000/ws/tst'
-    udp_address = ("0.0.0.0", 62222)
-    udp_send_address = ("192.168.0.255", 61111)
+    udp_address = ("192.168.137.1", 61112)
+    udp_send_address = ("192.168.137.255", 61111)
     ws_send_addr = ''
     tick_period = 10
 
@@ -66,7 +66,7 @@ class HostWindow(MainWindowBase):
             track.set_distance_meters(udp_packet.distance)
             track.time = int(udp_packet.boatTime * 1000) 
             track.set_speed_meters_sec(udp_packet.speed)
-            track.stroke_rate = int(udp_packet.strokeRate / 2)
+            track.stroke_rate = int(udp_packet.strokeRate)
             track.set_acceleration_meters_sec2(udp_packet.acceleration)
             
         self.update_info()
