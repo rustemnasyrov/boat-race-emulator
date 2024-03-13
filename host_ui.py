@@ -4,11 +4,12 @@ from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
 from WebSocketReciever import WebSocketReciever
 from get_reponser import GetResponser
 from http_responser import MyHandler
+from logger import log_info
 from main_send_ws import WebsocketSender
 from main_window_base import MainWindowBase
 import sys
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-from recieve_udp import receive_udp_from_trainer
+from recieve_udp import log_update_func, receive_udp_from_trainer
 from send_udp import send_udp_to_trainer, PAUSE_COMMAND, START_COMMAND, FINISH_COMMAND
 from datetime import datetime, time
 
@@ -16,7 +17,7 @@ class HostWindow(MainWindowBase):
     id_to_ind = []
     status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'ready': 1}
 
-    ws_address = 'ws://82.97.247.48:8000/ws/tst'
+    ws_address = 'ws://localhost:8000/ws/tst'
     udp_address = ("192.168.137.1", 61112)
     udp_send_address = ("192.168.137.255", 61111)
     ws_send_addr = ''
@@ -69,7 +70,7 @@ class HostWindow(MainWindowBase):
             track.stroke_rate = int(udp_packet.strokeRate)
             track.set_acceleration_meters_sec2(udp_packet.acceleration)
             
-        self.update_info()
+        #self.update_info()
 
     def start_server(self):
         self.thread = WebSocketReciever(self.ws_address)
@@ -79,6 +80,7 @@ class HostWindow(MainWindowBase):
         self.get_responser = GetResponser(self.thread)
         self.get_responser.set_data(self._info.to_dict())
         self.get_responser.start()
+        self.get_responser.setPriority(QThread.TimeCriticalPriority)
 
         self.udp_receive_thread = QThread(self.thread)
         self.udp_receive_thread.run = self.receive_udp_packets
@@ -123,6 +125,7 @@ class HostWindow(MainWindowBase):
         self.race_timer.stop()
 
     def status_ready(self):
+        self.status_finish()
         self.race_timer.stop()
         self._info.timer = 0
         self.timer_edit.setText('0')

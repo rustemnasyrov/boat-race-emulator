@@ -52,16 +52,15 @@ def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
 
         update_func(udp_packet)
 
-        time.sleep(0.001)
 
 last_timestamp = 0
 last_boat_time = 0
 active_id = 0
-def update_func(udp_packet):
+def log_update_func(udp_packet):
     global udp_logger, start_time, last_timestamp, last_boat_time, active_id
 
 
-    if active_id == udp_packet.id or not active_id:
+    if True: #active_id == udp_packet.id or not active_id:
         active_id = udp_packet.id
         timestamp_ms = int((time.time() - start_time) * 1000)  # Получаем текущий таймстемп в миллисекундах
         dt = timestamp_ms - last_timestamp
@@ -72,5 +71,5 @@ def update_func(udp_packet):
         last_boat_time = udp_packet.boatTime
 
 if __name__ == '__main__':
-    receive_udp_from_trainer(update_func)
+    receive_udp_from_trainer(log_update_func)
 

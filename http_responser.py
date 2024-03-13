@@ -72,12 +72,7 @@ class MyHandler(BaseHTTPRequestHandler):
             
             response_json = json.dumps(response_data)
             self.wfile.write(response_json.encode())
-
-            current_time = time.time()
-            dt = int((current_time - last_get_time) * 1000)     
-            r = response_data["tracks"][1]
-            print(f"dt=({dt}) {r}")
-            last_get_time = time.time()   
+ 
         else:
             self.send_error(404)
         lock.release()

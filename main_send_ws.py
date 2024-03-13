@@ -55,7 +55,7 @@ class WebsocketSender:
                 # Отправляем JSON-данные на вэб-сокет
                 data = self.data_function()
                 self.ws.send(json.dumps(data))
-                time.sleep(0.01)
+                #time.sleep(0.0001)
             except Exception as e:
                 print('Websocket send error {}'.format(e))
                 time.sleep(0.01)
