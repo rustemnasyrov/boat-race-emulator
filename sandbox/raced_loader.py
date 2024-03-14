@@ -1,38 +1,6 @@
 import requests
 import json
 
-class ApiClient:
-
-    def __init__(self, server_address):
-        self.server_address = server_address
-        self.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMDUyMzA2NX0.mfIMfMIP5e5ac3H-7sw-JRQbAIf4VvcIkMolKZA5RKM'
-
-    def post(self, path, data):
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.auth_token}'
-        }
-        url = f'{self.server_address}/{path}/'
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f'There was a problem with your request {url}. Status code:', response.status_code)
-
-    def get(self, path):
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.auth_token}'
-        }
-        url = f'{self.server_address}/{path}/'
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f'There was a problem with your request {url}. Status code:', response.status_code)
-
 class APICommand:
     def __init__(self, api, path):
         self.api = api
@@ -59,12 +27,73 @@ class APICommand:
             if item['title'] == title:
                 return item
         return None
+class ApiClient:
+
+    def __init__(self, server_address):
+        self.server_address = server_address
+        self.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMDUyMzA2NX0.mfIMfMIP5e5ac3H-7sw-JRQbAIf4VvcIkMolKZA5RKM'
+        
+
+    def post(self, path, data):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.auth_token}'
+        }
+        url = f'{self.server_address}/{path}/'
+        data = json.dumps(data)
+        response = requests.post(url, headers=headers, data=data)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f'There was a problem with your request {url}. Status code:', response.status_code)
+
+    def get(self, path):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.auth_token}'
+        }
+        url = f'{self.server_address}/{path}/'
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f'There was a problem with your request {url}. Status code:', response.status_code)
+        
+    def get_command(self, path):
+        return APICommand(self, path)
+
+class TournamentsCommand (APICommand):
+    def __init__(self, api):
+        super().__init__(api, 'tournament')
+
+    def add(self, title, start_date, end_date, is_archive = 0, find_before = False):
+        
+        if find_before:
+            item = self.find(title)
+            if item is not None:
+                return item
+            
+        data = {
+            'title': title,
+            'start_date': start_date,
+            'end_date': end_date,
+            'is_archive': is_archive
+        }
+        return self.post(path=self.path, data=data)
+
     
 class DisciplineCommand (APICommand):
     def __init__(self, api):
         super().__init__(api, 'discipline')
 
-    def add(self, title, tournament_id, distance, steps,):
+    def add(self, title, tournament_id, distance, steps, find_before = False):
+        if find_before:
+            item = self.find(title)
+            if item is not None:
+                return item
+            
         data = {
             'title': title,
             'tournament_id': tournament_id,
@@ -77,7 +106,12 @@ class RacesCommand (APICommand):
     def __init__(self, api):
         super().__init__(api, 'race')
 
-    def add(self, title, discipline_id, place, start_time, status, tracks):
+    def add(self, title, discipline_id, place, start_time, status, tracks, find_before = False):
+        if find_before:
+            item = self.find(title)
+            if item is not None:
+                return item
+
         data = {
             'title': title,
             'discipline_id': discipline_id,
@@ -87,53 +121,85 @@ class RacesCommand (APICommand):
             'tracks': tracks #["1", "2", "3", "4", "5"]
         }
         return self.post(path=self.path, data=data)
-       
 
+class SportsmenCommand (APICommand):
+    def __init__(self, api):
+        super().__init__(api, 'sportsmen')
+
+    def add(self, first_name, last_name, weight, age, tournaments):
+        data = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'weight': weight,
+            'age': age,
+            'tournaments': tournaments
+        }
+        return self.post(path=self.path, data=data)
+       
 class NovaRaceServer (ApiClient):
 
     def __init__(self, server_address):
         super().__init__(server_address)
+        self.tournament = TournamentsCommand(self)
         self.discipline = DisciplineCommand(self)
+        self.race = RacesCommand(self)
+        self.sportsmen = SportsmenCommand(self)
 
-    def tournament_list(self):
-        return self.get(path='tournament')['items']
-        
-    def add_tournament(self, title, start_date, end_date, is_archive = 0):
-        data = {
-            'title': title,
-            'start_date': start_date,
-            'end_date': end_date,
-            'is_archive': is_archive
-        }
-        return self.post(path='tournament', data=data)
-    
-    def get_tournament(self, id):
-        return self.get(path=f'tournament/{id}')
-    
-    def find_tournament(self, title):
-        items = self.tournament_list()
-        for item in items:
-            if item['title'] == title:
-                return item
-        return None
+remote_api_client = NovaRaceServer('http://82.97.247.48:8000')
 
-    
+local_api_client = NovaRaceServer('http://localhost:8000')
+local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMDYzNTk2M30.v9Nw8MzEumOI2fSKmFr4Y-oPoriJilYwpLsTKIu5xJM'
 
- 
-api_client = NovaRaceServer('http://82.97.247.48:8000')
+def create_tournament(api):
+    discipline_names = {
+        'Девочки до 13 лет',
+        'Мальчики до 13 лет',
+        'Юноши до 15 лет',
+        'Девушки до 15 лет',
+        'Юноши до 17 лет',
+        'Девушки до 17 лет',
+        'Юниоры до 19 лет',
+        'Юниорки до 19 лет',
+        'Юниоры до 24 лет',
+        'Юниорки до 24 лет',
+    }
 
-tournament_data = {
-    'title': 'Девушки до 15 лет',
-    'start_date': '2024-03-13',
-    'end_date': '2024-03-13',
-    'is_archive': 0
-}
+    tournament_title = 'Контрольная Тренировка'
 
-#print(api_client.post(tournament_data, path='/tournament/'))
-tid = api_client.find_tournament('Девушки до 15 лет')
-#api_client.add_discipline('Девушки до 15 лет', tid['id'], 200, 20)
-#api_client.add_discipline('Юноши до 15 лет', tid['id'], 200, 20)
+    tour = api.tournament.add(title=tournament_title, start_date='2024-03-15', end_date='2024-03-15', is_archive=0, find_before = True)
+    tour_id = tour['id']
+    tournaments = [{"id": tour_id, "title": tournament_title}]
 
-print(api_client.discipline.find('Юноши до 15 лет'))
+    for name in discipline_names:
+        api.discipline.add(name, tour_id, 200, 8, find_before = True)
+
+    sportsmans = [
+        {'first_name': 'Иван', 'last_name': 'Иванов', 'weight': 70, 'age': 12, 'tournaments': tournaments},
+        {'first_name': 'Петр', 'last_name': 'Петров', 'weight': 80, 'age': 11, 'tournaments': tournaments},
+        {'first_name': 'Василий', 'last_name': 'Васильев', 'weight': 90, 'age': 10, 'tournaments': tournaments},
+        {'first_name': 'Сергей', 'last_name': 'Сергеев', 'weight': 100, 'age': 9, 'tournaments': tournaments},
+        {'first_name': 'Алексей', 'last_name': 'Алексеев', 'weight': 110, 'age': 8, 'tournaments': tournaments},
+        {'first_name': 'Виктор', 'last_name': 'Викторов', 'weight': 120, 'age': 7, 'tournaments': tournaments},
+        {'first_name': 'Виктор1', 'last_name': 'Викторов', 'weight': 120, 'age': 7, 'tournaments': tournaments},
+        {'first_name': 'Виктор2', 'last_name': 'Викторов', 'weight': 120, 'age': 7, 'tournaments': tournaments},
+        {'first_name': 'Виктор3', 'last_name': 'Викторов', 'weight': 120, 'age': 7, 'tournaments': tournaments}
+    ]
+
+    sportman_in_base = []
+    tracks = []
+    for i in range(len(sportsmans)): 
+        sportman = sportsmans[i]
+        added_sp = api.sportsmen.add(sportman['first_name'], sportman['last_name'], sportman['weight'], sportman['age'], sportman['tournaments'])
+        track = {"number": i+1,"sportsman_id": added_sp['id']}
+        tracks.append(track)
+
+#    def add(self, title, discipline_id, place, start_time, status, tracks, find_before = False):
+    dsicipline_id = api.discipline.find('Девочки до 13 лет')['id']
+    api.race.add('Заезд 1', dsicipline_id, 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
+
+
+if __name__ == '__main__':
+    create_tournament(remote_api_client)
+
 
 
