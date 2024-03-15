@@ -1,6 +1,8 @@
 import requests
 import json
 
+from racers_export import read_excel
+
 class APICommand:
     def __init__(self, api, path):
         self.api = api
@@ -197,9 +199,35 @@ def create_tournament(api):
     dsicipline_id = api.discipline.find('Девочки до 13 лет')['id']
     api.race.add('Заезд 1', dsicipline_id, 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
 
+def load_tournaments(api):
+    racers = read_excel()
+
+    tournament_title = 'КТ от НОВА 2'
+
+    tour = api.tournament.add(title=tournament_title, start_date='2024-03-15', end_date='2024-03-15', is_archive=0, find_before = True)
+    tour_id = tour['id']
+    tournaments = [{"id": tour_id, "title": tournament_title}]
+
+    for item in racers:
+        discipline = api.discipline.add(item, tour_id, 200, 8, find_before = True)
+        for zaezd in racers[item]:
+            z_racers = racers[item][zaezd]
+            print(f'-{zaezd}: {len(z_racers)}')
+            tracks = []
+            for i in range(0, len(z_racers)):
+                sportman = z_racers[i]
+                added_sp = api.sportsmen.add(sportman.first_name, sportman.last_name, sportman.weight, sportman.age, tournaments)
+                track = {"number": i+1,"sportsman_id": added_sp['id']}
+                tracks.append(track)
+
+            #    def add(self, title, discipline_id, place, start_time, status, tracks, find_before = False):
+            api.race.add(zaezd, discipline['id'], 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
+
+    return racers            
+
 
 if __name__ == '__main__':
-    create_tournament(remote_api_client)
+    load_tournaments(remote_api_client)
 
 
 
