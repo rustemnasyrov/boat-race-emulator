@@ -18,6 +18,8 @@ class HostWindow(MainWindowBase):
     status_str_to_int = {'go': 0, 'three': 1, 'finish': 2, 'ready': 1}
 
     ws_address = 'ws://localhost:8000/ws/tst'
+    #ws_address = 'ws://82.97.247.48:8000/ws/tst'
+
     udp_address = ("192.168.137.1", 61112)
     udp_send_address = ("192.168.137.255", 61111)
     ws_send_addr = ''
@@ -142,10 +144,7 @@ class HostWindow(MainWindowBase):
         self.race_timer.start(self.tick_period)      
     
     def info_to_send(self):
-        data = dict()
-        for i in range(0, len(self.racer_widgets)):
-            data[str(i+1)] = self.racer_widgets[i].racer_info.as_dict(False)
-        return data
+        return self._info.tracks_dict(False)
     
     def closeEvent(self, event):
         self.get_responser.stop()
