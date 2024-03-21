@@ -1,6 +1,6 @@
 import socket
-import struct
 import time
+from UdpPacket import UdpPacket
 
 from logger import create_logger
 
@@ -11,17 +11,6 @@ stop_udp_flag = False
 def stop_udp_recieve():
     global stop_udp_flag
     stop_udp_flag = True
-
-
-class UdpPacket:
-    def __init__(self, data, addr):
-        self.data = data
-        self.addr = addr
-
-        str_format = "<8s I BBBB BB2s f f f f f f"
-        header, self.id, self.packetNumber, self.state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
-
-        self.header = header.decode().replace('\0', '')
 
 
 udp_logger = create_logger('udp.log', use_formatter=False)

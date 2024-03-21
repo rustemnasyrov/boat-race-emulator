@@ -1,6 +1,7 @@
 from http.client import HTTPResponse
 from http.server import HTTPServer
 from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
+from UdpPacket import UDPPacketBuffer
 from WebSocketReciever import WebSocketReciever
 from get_reponser import GetResponser
 from http_responser import MyHandler
@@ -24,12 +25,16 @@ class HostWindow(MainWindowBase):
     udp_send_address = ("192.168.137.255", 61111)
     ws_send_addr = ''
     tick_period = 10
+    
+    packet_buffer = None
 
     def __init__(self):
 
         super().__init__()
         
         self.receive_udp_packets = None
+        
+        self.packet_buffer = UDPPacketBuffer(self.process_udp_packet)
 
         # Создаем таймер и подключаем его к слоту
         self.race_timer = QTimer()
@@ -55,12 +60,13 @@ class HostWindow(MainWindowBase):
                 racerWidget.tick(elapsed_time)
                 
     def send_data_to_ws(self):
+        packet = self.packet_buffer.get_from_buffer()
         data = self.info_to_send()
         self.thread.send_message(data)
         self.get_responser.set_data(self._info.to_dict())
 
     def receive_udp_packets(self):
-        receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
+        receive_udp_from_trainer(self.packet_buffer.add_packet_to_buffer, self.udp_address)
 
     def process_udp_packet(self, udp_packet):
         if udp_packet.lane in self._info.tracks:
