@@ -34,7 +34,7 @@ class HostWindow(MainWindowBase):
         
         self.receive_udp_packets = None
         
-        self.packet_buffer = UDPPacketBufferList(10, self.process_udp_packet)
+        self.packet_buffer = UDPPacketBufferList(15, self.process_udp_packet)
 
         # Создаем таймер и подключаем его к слоту
         self.race_timer = QTimer()
@@ -42,7 +42,7 @@ class HostWindow(MainWindowBase):
         
         self.ws_send_timer = QTimer()
         self.ws_send_timer.timeout.connect(self.send_data_to_ws)
-        self.ws_send_timer.start(10)
+        self.ws_send_timer.start(11)
 
     def update_race_data(self):
         current_time = datetime.now()
@@ -60,7 +60,7 @@ class HostWindow(MainWindowBase):
                 racerWidget.tick(elapsed_time)
                 
     def send_data_to_ws(self):
-        self.packet_buffer.process_packet()
+        self.packet_buffer.do_process_packet()
         data = self.info_to_send()
         self.thread.send_message(data)
         self.get_responser.set_data(self._info.to_dict())
