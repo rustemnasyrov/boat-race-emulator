@@ -16,23 +16,43 @@ class UdpPacket:
         
 class UDPPacketBuffer:
     delay_steps = 0
-    def __init__(self, length=10, process_packet=None):
-        self.length = length
+    def __init__(self, buf_size=10, process_packet=None):
+        self.buf_size = buf_size
         self.buffer = deque()
         self.process_packet = process_packet
         
-    def get_from_buffer(self):
+    def process_packet(self):
         if len(self.buffer) > 0:
-            if self.delay_steps >= self.length:
+            if self.delay_steps >= self.buf_size:
                 packet = self.buffer.popleft()
                 if self.process_packet is not None:
                     self.process_packet(packet)
-                return packet
             else:
                 self.delay_steps += 1
         else:
+            if self.delay_steps > 0:
+                print("Buffer is empty")
+                
             self.delay_steps = 0
-        return None
+
 
     def add_packet_to_buffer(self, udp_packet):
         self.buffer.append(udp_packet)
+        
+class UDPPacketBufferList:
+    buffers = {}
+    
+    def __init__(self, buf_size =10, process_packet=None):
+        self.buf_size = buf_size
+        self.process_packet = process_packet
+        
+    def add_packet_to_buffer(self, udp_packet):
+        if udp_packet.id not in self.buffers:
+            self.buffers[udp_packet.id] = UDPPacketBuffer(self.buf_size, self.process_packet)
+        
+        self.buffers[udp_packet.id].add_packet_to_buffer(udp_packet)
+        
+    def process_packet(self):
+        if len(self.buffers) > 0:
+            for id in self.buffers:
+                self.buffers[id].process_packet()
