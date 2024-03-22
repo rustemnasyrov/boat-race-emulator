@@ -61,6 +61,7 @@ class HostWindow(MainWindowBase):
                 
     def send_data_to_ws(self):
         self.packet_buffer.do_process_packet()
+        #log_info(f'Model time {self._info.tracks[1].time}')
         data = self.info_to_send()
         self.thread.send_message(data)
         self.get_responser.set_data(self._info.to_dict())

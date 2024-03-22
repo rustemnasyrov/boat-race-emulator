@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import threading
 import time
+from TimeMeter import TimeMeter
 from extropolation import BoatParameters
 
 from logger import log_info
@@ -44,8 +45,12 @@ response_func = get_current_parameters_string
 def get_current_boat_parameters():
     return _current_boat_parameters
 
+tm = TimeMeter()
+
 class MyHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
+        #log_info(f'Get response ({tm.get_measure_str()})')
+        #tm.update_time()
         pass
     
     def do_POST(self):
