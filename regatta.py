@@ -36,6 +36,16 @@ names = ["Агафонова И.",
          "Александрова Н.",
          "Петрова Н."]
 
+class RacerState:
+    
+    disconnected = 'disconnected'  # Class attribute, faster than @property
+    ready = 'ready'
+    go = 'go'
+    finish = 'finish'
+    error = 'error'
+    false_start = 'false_start'
+
+
 class RacerModel:
     RC_RACER_KEY = 'racer'
     RC_SPEED_KEY = 'speed'
@@ -43,6 +53,7 @@ class RacerModel:
     RC_DISTANCE_KEY = 'distance'
     RC_TIME_KEY = 'time'
     RC_STROKE_RATE_KEY = 'stroke_rate' 
+    RC_STATE = 'state' #disconnected, ready, go, finish, false_start, error
     
     DISTANCE_MULTIPLAYER = 1000
     
@@ -54,8 +65,9 @@ class RacerModel:
         self.weight = 60
         self.age = 15
         self.trainer_id = 0
-        self.stroke_rate = 0
+        self.stroke_rate = 30
         self.acceleration = 0
+        self.state = RacerState.disconnected
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -79,7 +91,8 @@ class RacerModel:
     def as_dict(self, with_racer=True):
         result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time, 
                   self.RC_STROKE_RATE_KEY: self.stroke_rate,
-                  self.RC_ACCEL_KEY: self.acceleration}
+                  self.RC_ACCEL_KEY: self.acceleration,
+                  self.RC_STATE: self.state}
         if with_racer:
             result[self.RC_RACER_KEY] = self.racer
         return result
@@ -90,6 +103,8 @@ class RacerModel:
         self.distance = int(dict[self.RC_DISTANCE_KEY])
         self.time = int(dict[self.RC_TIME_KEY])
         self.stroke_rate = int(dict[self.RC_STROKE_RATE_KEY])
+        if self.RC_STATE in dict:
+            self.state = dict[self.RC_STATE]
         return self
     
 class RegattaRaceModel:

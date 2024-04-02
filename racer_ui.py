@@ -2,7 +2,7 @@ import random
 from PyQt5.QtGui import QResizeEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QLineEdit, QCheckBox
 from PyQt5.QtCore import Qt
-from regatta import RacerModel
+from regatta import RacerModel, RacerState
 
    
 class RacerWidget(QWidget):
@@ -84,7 +84,7 @@ class RacerWidget(QWidget):
         self.distanceSlider.setTickInterval(RacerModel.DISTANCE_MULTIPLAYER * 10)
         self.distanceSlider.valueChanged[int].connect(self.changeDistance)
         
-        self.auto_mode = QCheckBox('Авто', self)
+        self.auto_mode = QCheckBox('Гребём', self)
         self.auto_mode.setChecked(False)
         self.auto_mode.stateChanged.connect(self.toggle_auto)
 
@@ -138,15 +138,21 @@ class RacerWidget(QWidget):
             self.read_speed_from_ui()
         
     def tick(self, elapsed_time):
-        if self.auto_mode.isChecked() and not self.is_finished():
-            dt = elapsed_time - self._racer_info.time
-            self._racer_info.time = elapsed_time
-            s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
-            self.distanceSlider.setValue(int(s))
+        if self.auto_mode.isChecked():
+            if self.is_finished():
+                self._racer_info.state = RacerState.finish
+            else:
+                if elapsed_time > 0:
+                    dt = elapsed_time - self._racer_info.time
+                    self._racer_info.time = elapsed_time
+                    self._racer_info.state = RacerState.go
+                    s = self._racer_info.distance + self._racer_info.speed * (dt/1000)
+                    self.distanceSlider.setValue(int(s))
             
     def reset(self):
         self._racer_info.time = 0
         self._racer_info.speed = 0
+        self._racer_info.state = RacerState.ready
         self.sped_edit.setText('0')
         self.distanceSlider.setValue(0)
         self.auto_mode.setChecked(False)

@@ -1,6 +1,6 @@
 from http.client import HTTPResponse
 from http.server import HTTPServer
-from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QPushButton, QHBoxLayout, QCheckBox
 from UdpPacket import UDPPacketBufferList
 from WebSocketReciever import WebSocketReciever
 from get_reponser import GetResponser
@@ -21,8 +21,10 @@ class HostWindow(MainWindowBase):
     ws_address = 'ws://localhost:8000/ws/tst'
     #ws_address = 'ws://82.97.247.48:8000/ws/tst'
 
-    udp_address = ("192.168.137.1", 61112)
-    udp_send_address = ("192.168.137.255", 61111)
+    #udp_address = ("192.168.137.1", 61112)
+    #udp_send_address = ("192.168.137.255", 61111)
+    udp_address = ("127.0.0.1", 61112)
+    udp_send_address = ("127.0.0.255", 61111)
     ws_send_addr = ''
     tick_period = 10
     
@@ -43,7 +45,17 @@ class HostWindow(MainWindowBase):
         self.ws_send_timer = QTimer()
         self.ws_send_timer.timeout.connect(self.send_data_to_ws)
         self.ws_send_timer.start(11)
-
+        
+    def add_buttons(self, layout):
+        self.auto_mode = QCheckBox('Режим эмулятора тренажёров', self)
+        self.auto_mode.setChecked(False)
+        #self.auto_mode.stateChanged.connect(self.toggle_auto)
+        layout.addWidget(self.auto_mode)
+    
+    @property    
+    def is_auto_mode(self):
+        return self.auto_mode.isChecked()
+    
     def update_race_data(self):
         current_time = datetime.now()
         elapsed_time = int((current_time - self.start_time).total_seconds() * 1000)
@@ -55,12 +67,14 @@ class HostWindow(MainWindowBase):
     def tick(self, elapsed_time):
         self.timer_edit.setText(str(elapsed_time)) 
         
-        if self._info.is_status_running:
+        if self._info.is_status_running and self.is_auto_mode:
             for racerWidget in self.racer_widgets:
                 racerWidget.tick(elapsed_time)
                 
     def send_data_to_ws(self):
         self.packet_buffer.do_process_packet()
+        if self.is_auto_mode:
+            self.send_info()
         #log_info(f'Model time {self._info.tracks[1].time}')
         data = self.info_to_send()
         self.thread.send_message(data)
