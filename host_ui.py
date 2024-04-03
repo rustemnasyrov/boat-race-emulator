@@ -92,7 +92,7 @@ class HostWindow(MainWindowBase):
             track.set_speed_meters_sec(udp_packet.speed)
             track.stroke_rate = int(udp_packet.strokeRate)
             track.set_acceleration_meters_sec2(udp_packet.acceleration)
-            track.state = str(udp_packet.state)
+            track.set_state(str(udp_packet.state))
             
         #self.update_info()
 

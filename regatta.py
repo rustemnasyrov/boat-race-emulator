@@ -1,6 +1,8 @@
 
 import random
 
+from TimeMeter import TimeMeter
+
 
 #---   Это формат итогового пакета, который генерирется классами ниже
 #----------------------------------------------------------------
@@ -55,6 +57,8 @@ class RacerModel:
     RC_STROKE_RATE_KEY = 'stroke_rate' 
     RC_STATE = 'state' #disconnected, ready, go, finish, false_start, error
     
+    WAIT_COUNTER_VALUE = 100 
+    
     DISTANCE_MULTIPLAYER = 1000
     
     def __init__(self, racer, speed, distance, time=0):
@@ -68,6 +72,7 @@ class RacerModel:
         self.stroke_rate = 30
         self.acceleration = 0
         self.state = RacerState.disconnected
+        self.time_meter = TimeMeter()
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -88,11 +93,22 @@ class RacerModel:
     def get_acceleration_meters_sec2(self):
         return self.acceleration / self.DISTANCE_MULTIPLAYER
         
+    def set_state(self, state):
+        self.state = state
+        self.update_counter = self.WAIT_COUNTER_VALUE
+        
+    def get_state(self):
+        if self.update_counter <= 0:
+            return RacerState.disconnected
+        
+        self.update_counter -= 1
+        return self.state
+        
     def as_dict(self, with_racer=True):
         result = {self.RC_SPEED_KEY: self.speed, self.RC_DISTANCE_KEY: self.distance, self.RC_TIME_KEY: self.time, 
                   self.RC_STROKE_RATE_KEY: self.stroke_rate,
                   self.RC_ACCEL_KEY: self.acceleration,
-                  self.RC_STATE: self.state}
+                  self.RC_STATE: self.get_state()}
         if with_racer:
             result[self.RC_RACER_KEY] = self.racer
         return result
