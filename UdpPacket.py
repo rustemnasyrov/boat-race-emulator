@@ -3,8 +3,36 @@ from PyQt5.QtCore import QTimer
 from collections import deque
 
 from logger import log_info
+from regatta import RacerState
 
-
+class UDPBoatState:
+    Stop = 0b001 #// Нет гонки
+    Start = 0b010 # // Гонка
+    Preparing = 0b00001 | Stop #// Установка параметров
+    Ready = 0b00010 | Stop #// Ожидание с обратным отсчётом
+    Finish = 0b01000 | Stop #// Гонка закончена, дистанция пройдена
+    
+    def __init__(self, state, false_start):
+        self.state = state
+        #false_start в первом байте содержит признак неверной стартовой позиции. Определяем, что он не 0
+        self.false_start = false_start != 0
+        self.false_start = false_start
+    
+    def __repr__(self):
+        if self.state == UDPBoatState.Finish:
+            return RacerState.finish
+        
+        if self.false_start:
+            return RacerState.false_start
+        
+        if self.state == UDPBoatState.Start:
+            return RacerState.go
+        
+        if self.state == UDPBoatState.Stop or self.state == UDPBoatState.Preparing or self.state == UDPBoatState.Ready:
+            return RacerState.ready
+        
+        return RacerState.error
+    
 
 class UdpPacket:
     def __init__(self, data, addr):
@@ -12,7 +40,9 @@ class UdpPacket:
         self.addr = addr
 
         str_format = "<8s I BBBB BB2s f f f f f f"
-        header, self.id, self.packetNumber, self.state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
+        header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
+
+        self.state = UDPBoatState(self._state, self.reserve & 0b00000001)
 
         self.header = header.decode().replace('\0', '')
         

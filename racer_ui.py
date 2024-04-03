@@ -72,6 +72,8 @@ class RacerWidget(QWidget):
         self.age_edit = QLineEdit()
         self.speedLabel = QLabel('Скорость:', self)
         self.sped_edit = QLineEdit()
+        self.stateLabel = QLabel('Статус:', self)
+        self.state_edit = QLineEdit()
         self.sped_edit.setMaximumHeight(20)
         self.sped_edit.textChanged.connect(self.on_speed_changed)
 
@@ -93,6 +95,8 @@ class RacerWidget(QWidget):
 
         row = QHBoxLayout()
         row.addWidget(self.lineLabel)
+        row.addWidget(self.stateLabel)
+        row.addWidget(self.state_edit)
         row.addWidget(self.nameLabel)
         row.addWidget(self.name_edit)
         row.addWidget(self.weightLabel)
@@ -132,6 +136,7 @@ class RacerWidget(QWidget):
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
         self.lineLabel.setText('Линия: {}'.format(self._line))
         self.distanceSlider.setValue(self._racer_info.distance )
+        self.state_edit.setText(self._racer_info.state)
         
     def on_speed_changed(self):
         if self.auto_mode.isChecked(): 
