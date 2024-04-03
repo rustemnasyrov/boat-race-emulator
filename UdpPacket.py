@@ -39,10 +39,10 @@ class UdpPacket:
         self.data = data
         self.addr = addr
 
-        str_format = "<8s I BBBB BB2s f f f f f f"
-        header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
+        str_format = "<8s I BBBB BBBB f f f f f f"
+        header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
 
-        self.state = UDPBoatState(self._state, self.reserve & 0b00000001)
+        self.state = UDPBoatState(self._state, self.reserve)
 
         self.header = header.decode().replace('\0', '')
         
