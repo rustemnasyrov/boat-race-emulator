@@ -22,7 +22,7 @@ def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
 
     UDP_IP = udp_address[0]
     UDP_PORT = udp_address[1]
-    client_header = "BRTC102"
+    client_header = "BRTC103"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
@@ -47,7 +47,6 @@ last_boat_time = 0
 active_id = 0
 def log_update_func(udp_packet):
     global udp_logger, start_time, last_timestamp, last_boat_time, active_id
-
 
     if active_id == udp_packet.id or not active_id:
         active_id = udp_packet.id

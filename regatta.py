@@ -42,8 +42,10 @@ class RacerState:
     
     disconnected = 'disconnected'  # Class attribute, faster than @property
     ready = 'ready'
+    countdown = 'countdown'
     go = 'go'
     finish = 'finish'
+    stop = 'stop'
     error = 'error'
     false_start = 'false_start'
 
@@ -72,7 +74,7 @@ class RacerModel:
         self.stroke_rate = 30
         self.acceleration = 0
         self.state = RacerState.disconnected
-        self.time_meter = TimeMeter()
+        self.update_counter = self.WAIT_COUNTER_VALUE
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)

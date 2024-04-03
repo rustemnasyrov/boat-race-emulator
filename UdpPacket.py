@@ -6,16 +6,15 @@ from logger import log_info
 from regatta import RacerState
 
 class UDPBoatState:
-    Stop = 0b001 #// Нет гонки
-    Start = 0b010 # // Гонка
-    Preparing = 0b00001 | Stop #// Установка параметров
-    Ready = 0b00010 | Stop #// Ожидание с обратным отсчётом
-    Finish = 0b01000 | Stop #// Гонка закончена, дистанция пройдена
+    Stop      = 0b00000001        # Нет гонки - stop
+    Start     = 0b00000010        # Гонка - go
+    Preparing = 0b00001000 | Stop # Установка параметров - ready
+    Ready     = 0b00010000 | Stop # Ожидание с обратным отсчётом - countdown
+    Finish    = 0b01000000 | Stop # Гонка закончена, дистанция пройдена - finish
     
     def __init__(self, state, false_start):
         self.state = state
         #false_start в первом байте содержит признак неверной стартовой позиции. Определяем, что он не 0
-        self.false_start = false_start != 0
         self.false_start = false_start
     
     def __repr__(self):
@@ -28,8 +27,14 @@ class UDPBoatState:
         if self.state == UDPBoatState.Start:
             return RacerState.go
         
-        if self.state == UDPBoatState.Stop or self.state == UDPBoatState.Preparing or self.state == UDPBoatState.Ready:
+        if self.state == UDPBoatState.Stop:
+            return RacerState.stop
+        
+        if self.state == UDPBoatState.Preparing:
             return RacerState.ready
+        
+        if self.state == UDPBoatState.Ready:
+            return RacerState.countdown
         
         return RacerState.error
     
@@ -42,7 +47,7 @@ class UdpPacket:
         str_format = "<8s I BBBB BBBB f f f f f f"
         header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
 
-        self.state = UDPBoatState(self._state, self.reserve)
+        self.state = UDPBoatState(self._state, self.falseStart)
 
         self.header = header.decode().replace('\0', '')
         
