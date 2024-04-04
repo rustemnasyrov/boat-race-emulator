@@ -21,10 +21,10 @@ class HostWindow(MainWindowBase):
     ws_address = 'ws://localhost:8000/ws/tst'
     #ws_address = 'ws://82.97.247.48:8000/ws/tst'
 
-    udp_address = ("192.168.137.1", 61112)
-    udp_send_address = ("192.168.137.255", 61111)
-    #udp_address = ("127.0.0.1", 61112)
-    #udp_send_address = ("127.0.0.255", 61111)
+    #udp_address = ("192.168.137.1", 61112)
+    #udp_send_address = ("192.168.137.255", 61111)
+    udp_address = ("127.0.0.1", 61112)
+    udp_send_address = ("127.0.0.255", 61111)
     ws_send_addr = ''
     tick_period = 10
     

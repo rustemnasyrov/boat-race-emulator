@@ -1,6 +1,6 @@
 import random
 from PyQt5.QtGui import QResizeEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QLineEdit, QCheckBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QLineEdit, QCheckBox, QComboBox
 from PyQt5.QtCore import Qt
 from regatta import RacerModel, RacerState
 
@@ -73,7 +73,8 @@ class RacerWidget(QWidget):
         self.speedLabel = QLabel('Скорость:', self)
         self.sped_edit = QLineEdit()
         self.stateLabel = QLabel('Статус:', self)
-        self.state_edit = QLineEdit()
+        self.state_dropdown = QComboBox()
+        self.state_dropdown.addItems(RacerState.all())
         self.sped_edit.setMaximumHeight(20)
         self.sped_edit.textChanged.connect(self.on_speed_changed)
 
@@ -96,7 +97,7 @@ class RacerWidget(QWidget):
         row = QHBoxLayout()
         row.addWidget(self.lineLabel)
         row.addWidget(self.stateLabel)
-        row.addWidget(self.state_edit)
+        row.addWidget(self.state_dropdown)
         row.addWidget(self.nameLabel)
         row.addWidget(self.name_edit)
         row.addWidget(self.weightLabel)
@@ -136,7 +137,7 @@ class RacerWidget(QWidget):
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
         self.lineLabel.setText('Линия: {}'.format(self._line))
         self.distanceSlider.setValue(self._racer_info.distance )
-        self.state_edit.setText(self._racer_info.state)
+        self.state_dropdown.setCurrentText(self._racer_info.state)
         
     def on_speed_changed(self):
         if self.auto_mode.isChecked(): 
@@ -146,6 +147,7 @@ class RacerWidget(QWidget):
         if self.auto_mode.isChecked():
             if self.is_finished():
                 self._racer_info.state = RacerState.finish
+                self.state_dropdown.setCurrentText(RacerState.finish)
             else:
                 if elapsed_time > 0:
                     dt = elapsed_time - self._racer_info.time
@@ -170,6 +172,7 @@ class RacerWidget(QWidget):
         self._racer_info.weight = int(self.weight_edit.text() or '60')
         self.read_speed_from_ui()
         self._racer_info.distance = self.distanceSlider.value()
+        self._racer_info.set_state(self.state_dropdown.currentText())
 
     def read_speed_from_ui(self):
         try:

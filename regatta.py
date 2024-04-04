@@ -48,6 +48,10 @@ class RacerState:
     stop = 'stop'
     error = 'error'
     false_start = 'false_start'
+    
+    @classmethod
+    def all(self):
+        return [self.disconnected, self.ready, self.countdown, self.go, self.finish, self.stop, self.error, self.false_start]
 
 
 class RacerModel:
