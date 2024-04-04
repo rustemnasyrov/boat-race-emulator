@@ -119,7 +119,7 @@ class HostWindow(MainWindowBase):
         self._info.set_distance_meters(distance)
         self._info.regatta_name = race['tournament_title']
         self._info.race_name = str(race['discipline_title']) + ', ' + str(race['race_title'])
-        self._info.race_status = race['status'] if race['status'] != 'stop' else 'finish'
+        self._info.race_status = race['status'] if race['status'] != 'stop' else 'ready'
 
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
@@ -134,22 +134,20 @@ class HostWindow(MainWindowBase):
         
         if self._info.race_status == 'go':
             self.status_go()
-        elif self._info.race_status == 'finish' or self._info.race_status == 'stop':
+        elif self._info.race_status == 'finish':
             self.status_finish()
         elif self._info.race_status == 'countdown':
             self.status_countdown()
-        elif self._info.race_status == 'ready':
+        elif self._info.race_status == 'ready' or self._info.race_status == 'stop':
             self.status_ready()
             
     def status_countdown(self):
         self.start_race_timer()        
     
     def status_finish(self):
-        self.race_status_edit.setText('finish')
         self.race_timer.stop()
 
     def status_ready(self):
-        self.status_finish()
         self.race_timer.stop()
         self._info.timer = 0
         self.timer_edit.setText('0')

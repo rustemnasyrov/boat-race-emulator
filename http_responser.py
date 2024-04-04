@@ -83,7 +83,7 @@ class MyHandler(BaseHTTPRequestHandler):
         lock.release()
 
 if __name__ == '__main__':
-    server_address = ('', 8000)
+    server_address = ('', 8888)
     httpd = HTTPServer(server_address, MyHandler)
     print('Starting server...')
     httpd.serve_forever()
