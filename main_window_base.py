@@ -48,6 +48,7 @@ class MainWindowBase(QWidget):
         self.setup_button.clicked.connect(self.setup_server_address)
 
         layout = QVBoxLayout()
+        self.main_layout = layout
         row_1 = QHBoxLayout()
         row_1.addWidget(self.regatta_label)
         row_1.addWidget(self.regatta_edit)
@@ -101,6 +102,11 @@ class MainWindowBase(QWidget):
             self.racer_widgets.append(RacerWidget(racer, distance=self._info.distance, line = i))
             vbox.addWidget(self.racer_widgets[-1])
         lyout.addLayout(vbox)
+        
+    def delete_racers(self):
+        for racer_widget in self.racer_widgets:
+            self.main_layout.removeWidget(racer_widget)
+        self.racer_widgets = []
 
     def connect_notifications(self):
         controls = ['regatta_edit', 'race_edit', 'distance_edit', 'timer_edit', 'race_status_edit']

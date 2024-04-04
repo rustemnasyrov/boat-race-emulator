@@ -121,6 +121,11 @@ class HostWindow(MainWindowBase):
         self._info.race_name = str(race['discipline_title']) + ', ' + str(race['race_title'])
         self._info.race_status = race['status'] if race['status'] != 'stop' else 'ready'
 
+        if self._info.race_status == 'ready':
+            self._info.init_tracks(count = len(data['simulators']))
+            self.delete_racers()
+            self.add_racers(self.main_layout)
+
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
                 track = self._info.tracks[int(idx)]

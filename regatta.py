@@ -140,7 +140,7 @@ class RegattaRaceModel:
         self.race_status = 'ready'
         self.timer = 0
         self.tracks = {}
-        self.init_tracks()
+        self.init_tracks(fill=True)
         
     @property
     def is_status_countdown(self):
@@ -156,9 +156,10 @@ class RegattaRaceModel:
     def get_distance_meters(self):
         return int(self.distance / RacerModel.DISTANCE_MULTIPLAYER)
         
-    def init_tracks(self):
-        for i in range(1, 10):
-            self.tracks[i] = RacerModel(names[i], 0, 0, 0)
+    def init_tracks(self, count = 9, fill = False):
+        self.tracks = {}
+        for i in range(1, count+1):
+            self.tracks[i] = RacerModel(names[i], 0, 0, 0) if fill else RacerModel("", 0, 0, 0)
 
     def add_track(self, line, dict):
         if line in self.tracks:
