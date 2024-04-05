@@ -47,15 +47,34 @@ class HostWindow(MainWindowBase):
         self.ws_send_timer.start(11)
         
     def add_buttons(self, layout):
+        vl = QHBoxLayout()
         self.auto_mode = QCheckBox('Режим эмулятора тренажёров', self)
         self.auto_mode.setChecked(False)
-        #self.auto_mode.stateChanged.connect(self.toggle_auto)
-        layout.addWidget(self.auto_mode)
+        self.auto_mode_all = QCheckBox('Гребём все', self)
+        self.auto_mode.stateChanged.connect(self.toggle_auto)
+        self.auto_mode_all.setChecked(False)
+        self.auto_mode_all.stateChanged.connect(self.toggle_auto_all)
+        self.auto_mode_all.setEnabled(False)
+        vl.addWidget(self.auto_mode)
+        vl.addWidget(self.auto_mode_all)
+        vl.addStretch(1)
+        layout.addLayout(vl)
     
     @property    
     def is_auto_mode(self):
         return self.auto_mode.isChecked()
     
+    def toggle_auto(self):
+        if self.auto_mode.isChecked():
+            self.auto_mode_all.setEnabled(True)
+        else:
+            self.auto_mode_all.setChecked(False)
+            self.auto_mode_all.setEnabled(False)
+            
+    def toggle_auto_all(self):
+          for racer_widget in self.racer_widgets:
+            racer_widget.auto_mode.setChecked(self.auto_mode_all.isChecked())
+
     def update_race_data(self):
         current_time = datetime.now()
         elapsed_time = int((current_time - self.start_time).total_seconds() * 1000)
