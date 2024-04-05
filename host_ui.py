@@ -21,10 +21,10 @@ class HostWindow(MainWindowBase):
     ws_address = 'ws://localhost:8000/ws/tst'
     #ws_address = 'ws://82.97.247.48:8000/ws/tst'
 
-    #udp_address = ("192.168.137.1", 61112)
-    #udp_send_address = ("192.168.137.255", 61111)
-    udp_address = ("127.0.0.1", 61112)
-    udp_send_address = ("127.0.0.255", 61111)
+    udp_address = ("192.168.137.1", 61112)
+    udp_send_address = ("192.168.137.255", 61111)
+    #udp_address = ("127.0.0.1", 61112)
+    #udp_send_address = ("127.0.0.255", 61111)
     ws_send_addr = ''
     tick_period = 10
     
@@ -103,16 +103,8 @@ class HostWindow(MainWindowBase):
         receive_udp_from_trainer(self.packet_buffer.add_packet_to_buffer, self.udp_address)
 
     def process_udp_packet(self, udp_packet):
-        if udp_packet.lane in self._info.tracks:
-            track = self._info.tracks[udp_packet.lane]
-            track.trainer_id = udp_packet.id
-            track.set_distance_meters(udp_packet.distance)
-            track.time = int(udp_packet.boatTime * 1000) 
-            track.set_speed_meters_sec(udp_packet.speed)
-            track.stroke_rate = int(udp_packet.strokeRate)
-            track.set_acceleration_meters_sec2(udp_packet.acceleration)
-            track.set_state(str(udp_packet.state))
-            
+        self._info.process_udp_packet(udp_packet)
+
         #self.update_info()
 
     def start_server(self):
@@ -141,8 +133,8 @@ class HostWindow(MainWindowBase):
         self._info.race_status = race['status'] if race['status'] != 'stop' else 'ready'
 
         if self._info.race_status == 'ready':
-            self._info.init_tracks(count = len(data['simulators']))
             self.delete_racers()
+            self._info.init_tracks(count = len(data['simulators']))
             self.add_racers(self.main_layout)
 
         for idx, value in data['simulators'].items():

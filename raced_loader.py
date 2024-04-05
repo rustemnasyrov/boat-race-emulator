@@ -152,6 +152,7 @@ remote_api_client = NovaRaceServer('http://82.97.247.48:8000')
 local_api_client = NovaRaceServer('http://localhost:8000')
 local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMDYzNTk2M30.v9Nw8MzEumOI2fSKmFr4Y-oPoriJilYwpLsTKIu5xJM'
 local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMjE3MjYxMH0.hG2ZOTjTB7b8q6gxzVFNrqOGsZbqxFMP9vw-BeHEUrs'
+local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMjUxODEyOX0.HjtFhK38qxg-zz8TsJeawgEsPoWejdCvehuKOSowrCo'
 
 
 def create_tournament(api):

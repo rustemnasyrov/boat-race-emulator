@@ -144,6 +144,7 @@ class RegattaRaceModel:
         self.race_status = 'ready'
         self.timer = 0
         self.tracks = {}
+        self.track_ids = {}
         self.init_tracks(fill=True)
         
     @property
@@ -161,9 +162,12 @@ class RegattaRaceModel:
         return int(self.distance / RacerModel.DISTANCE_MULTIPLAYER)
         
     def init_tracks(self, count = 9, fill = False):
+        self.tracks = None
         self.tracks = {}
         for i in range(1, count+1):
             self.tracks[i] = RacerModel(names[i], 0, 0, 0) if fill else RacerModel("", 0, 0, 0)
+            if i in self.track_ids:
+                self.tracks[i].trainer_id = self.track_ids[i]
 
     def add_track(self, line, dict):
         if line in self.tracks:
@@ -207,6 +211,19 @@ class RegattaRaceModel:
             self.add_track(int(i), track)
         
         return self
+    
+    def process_udp_packet(self, udp_packet):
+        self.track_ids[udp_packet.lane] = udp_packet.id
+        if udp_packet.lane in self.tracks:
+            track = self.tracks[udp_packet.lane]
+            track.trainer_id = udp_packet.id
+            track.set_distance_meters(udp_packet.distance)
+            track.time = int(udp_packet.boatTime * 1000) 
+            track.set_speed_meters_sec(udp_packet.speed)
+            track.stroke_rate = int(udp_packet.strokeRate)
+            track.set_acceleration_meters_sec2(udp_packet.acceleration)
+            track.set_state(str(udp_packet.state))
+        
     
 
 

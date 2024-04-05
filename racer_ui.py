@@ -135,7 +135,7 @@ class RacerWidget(QWidget):
         self.weight_edit.setText(str(self._racer_info.weight))
         self.age_edit.setText(str(self._racer_info.age))
         self.sped_edit.setText(str(self._racer_info.get_speed_meters_sec()))
-        self.lineLabel.setText('Линия: {}'.format(self._line))
+        self.lineLabel.setText('Линия: {}, {}'.format(self._line, self._racer_info.trainer_id))
         self.distanceSlider.setValue(self._racer_info.distance )
         self.state_dropdown.setCurrentText(self._racer_info.state)
         
