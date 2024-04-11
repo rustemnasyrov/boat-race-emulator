@@ -21,10 +21,15 @@ class HostWindow(MainWindowBase):
     ws_address = 'ws://localhost:8000/ws/tst'
     #ws_address = 'ws://82.97.247.48:8000/ws/tst'
 
-    udp_address = ("192.168.137.1", 61112)
-    udp_send_address = ("192.168.137.255", 61111)
+    #udp_address = ("192.168.50.2", 61112)
+    #udp_send_address = ("192.168.50.255", 61111)
+    
     #udp_address = ("127.0.0.1", 61112)
     #udp_send_address = ("127.0.0.255", 61111)
+
+    udp_address = ("192.168.50.71", 61112)
+    udp_send_address = ("192.168.50.255", 61111)
+
     ws_send_addr = ''
     tick_period = 10
     
@@ -36,7 +41,7 @@ class HostWindow(MainWindowBase):
         
         self.receive_udp_packets = None
         
-        self.packet_buffer = UDPPacketBufferList(15, self.process_udp_packet)
+        self.packet_buffer = UDPPacketBufferList(10, self.process_udp_packet)
 
         # Создаем таймер и подключаем его к слоту
         self.race_timer = QTimer()
@@ -100,7 +105,7 @@ class HostWindow(MainWindowBase):
         self.get_responser.set_data(self._info.to_dict())
 
     def receive_udp_packets(self):
-        receive_udp_from_trainer(self.packet_buffer.add_packet_to_buffer, self.udp_address)
+        receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
 
     def process_udp_packet(self, udp_packet):
         self._info.process_udp_packet(udp_packet)

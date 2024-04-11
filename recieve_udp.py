@@ -1,5 +1,6 @@
 import socket
 import time
+from TimeMeter import TimeMeter
 from UdpPacket import UdpPacket
 
 from logger import create_logger
@@ -17,7 +18,7 @@ udp_logger = create_logger('udp.log', use_formatter=False)
 start_time =  time.time()
 
 
-def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
+def receive_udp_from_trainer(update_func, udp_address=("192.168.50.71", 61112)):
     global stop_udp_flag
 
     UDP_IP = udp_address[0]
@@ -45,10 +46,20 @@ def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
 last_timestamp = 0
 last_boat_time = 0
 active_id = 0
+
+tm = {}
+for i in range(1,10):
+    tm[i] = TimeMeter()
+
 def log_update_func(udp_packet):
     global udp_logger, start_time, last_timestamp, last_boat_time, active_id
 
-    if active_id == udp_packet.id or not active_id:
+    mms = tm[udp_packet.lane].get_measure_str()
+    print(f"{udp_packet.lane} {mms}")
+    udp_logger.info(f"{udp_packet.lane} {mms}")
+    tm[udp_packet.lane].update_time()   
+
+    if False: #active_id == udp_packet.id or not active_id:
         active_id = udp_packet.id
         timestamp_ms = int((time.time() - start_time) * 1000)  # Получаем текущий таймстемп в миллисекундах
         dt = timestamp_ms - last_timestamp
