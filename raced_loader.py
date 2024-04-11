@@ -203,19 +203,19 @@ def create_tournament(api):
     api.race.add('Заезд 1', dsicipline_id, 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
 
 def load_tournaments(api):
-    racers = read_excel()
+    racers = read_excel('sandbox/002_volochek_4.xlsx', 'Лист1', (3,400), False)
 
     tournament_title = 'КТ от НОВА'
 
-    tour = api.tournament.add(title=tournament_title, start_date='2024-03-15', end_date='2024-03-15', is_archive=0, find_before = True)
+    tour = api.tournament.add(title=tournament_title, start_date='2024-04-11', end_date='2024-04-11', is_archive=0, find_before = True)
     tour_id = tour['id']
     tournaments = [{"id": tour_id, "title": tournament_title}]
 
     minutes = 0
     for item in racers:
         discipline = api.discipline.add(item, tour_id, 200, 8, find_before = True)
-        for zaezd in racers[item]:
-            z_racers = racers[item][zaezd]
+        for zaezd in racers[item].race_names():
+            z_racers = racers[item].get_race(zaezd)
             print(f'-{zaezd}: {len(z_racers)}')
             tracks = []
             for i in range(0, len(z_racers)):
@@ -225,16 +225,16 @@ def load_tournaments(api):
                 tracks.append(track)
 
             #    def add(self, title, discipline_id, place, start_time, status, tracks, find_before = False):
-            start_time = '2024-03-15T16:05:00.392Z'
+            start_time = '2024-04-11T13:00:00.392Z'
             # Увеличиваем время в строке выше на 5 минут при кждом шаге цикла
             minutes += 5
             hours = 16 + minutes // 60
-            start_time = f'2024-03-15T{hours:02d}:{minutes % 60:02d}:00.392Z' 
+            start_time = f'2024-04-11T{hours:02d}:{minutes % 60:02d}:00.392Z' 
 
-            api.race.add(zaezd, discipline['id'], 'СПб', start_time, 0, tracks)
+            api.race.add(zaezd, discipline['id'], 'Вышний Волочёк', start_time, 0, tracks)
 
     return racers            
-
+ 
 
 if __name__ == '__main__':
     load_tournaments(local_api_client)
