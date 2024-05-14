@@ -1,7 +1,7 @@
 import requests
 import json
 
-from racers_export import read_excel
+from racers_export import ExcelRacersFile, read_excel
 
 class APICommand:
     def __init__(self, api, path):
@@ -202,16 +202,22 @@ def create_tournament(api):
     dsicipline_id = api.discipline.find('Девочки до 13 лет')['id']
     api.race.add('Заезд 1', dsicipline_id, 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
 
-def load_tournaments(api):
-    racers = read_excel('sandbox/002_volochek_4.xlsx', 'Лист1', (3,400), False)
-
+def load_tournaments(api, excel_settings):
     tournament_title = 'КТ от НОВА'
+    race_place = 'Вышний Волочёк'
+    start_date='2024-04-11'
+    end_date='2024-04-11'
+    start_time = '13:30' #время первого заезда
+    race_duration = 5 #время на один заезд в минутах
+        
+    racers = read_excel(excel_settings)
 
-    tour = api.tournament.add(title=tournament_title, start_date='2024-04-11', end_date='2024-04-11', is_archive=0, find_before = True)
+    tour = api.tournament.add(title=tournament_title, start_date=start_date, end_date=end_date, is_archive=0, find_before = True)
     tour_id = tour['id']
     tournaments = [{"id": tour_id, "title": tournament_title}]
 
-    minutes = 0
+    minutes = int(start_time.split(':')[1]) 
+    hours = int(start_time.split(':')[0])
     for item in racers:
         discipline = api.discipline.add(item, tour_id, 200, 8, find_before = True)
         for zaezd in racers[item].race_names():
@@ -224,20 +230,25 @@ def load_tournaments(api):
                 track = {"number": i+1,"sportsman_id": added_sp['id']}
                 tracks.append(track)
 
-            #    def add(self, title, discipline_id, place, start_time, status, tracks, find_before = False):
-            start_time = '2024-04-11T13:00:00.392Z'
             # Увеличиваем время в строке выше на 5 минут при кждом шаге цикла
-            minutes += 5
-            hours = 16 + minutes // 60
-            start_time = f'2024-04-11T{hours:02d}:{minutes % 60:02d}:00.392Z' 
-
-            api.race.add(zaezd, discipline['id'], 'Вышний Волочёк', start_time, 0, tracks)
+            hours = hours + minutes // 60
+            start_time = f'{start_date}T{hours:02d}:{minutes % 60:02d}:00.392Z' 
+            minutes += race_duration
+            
+            api.race.add(zaezd, discipline['id'], race_place, start_time, 0, tracks)
 
     return racers            
  
 
 if __name__ == '__main__':
-    load_tournaments(local_api_client)
+    racer_file = ExcelRacersFile(
+        filename='sandbox/002_volochek_4.xlsx',
+        sheet_name='Лист1',
+        row_range=(3,400),
+        rearrange_races=False
+    )
+    
+    load_tournaments(local_api_client, racer_file)
 
 
 

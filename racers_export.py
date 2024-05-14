@@ -2,19 +2,30 @@ import os
 import openpyxl
 import requests
 
-class Racer:
-    def __init__(self, number, name, year,discipline, class_, coach, organization, weight, zaezd):
-        self.number = number
-        self.fio = name
-        self.discipline = discipline
-        self.year = year
-        self.class_ = class_
-        self.coach = coach
-        self.organization = organization
-        self.weight1 = weight
-        self.zaezd_number = zaezd
-        self.track_number = 0
+class RacerFields:
+    number = "Стартовый_номер"
+    fio = "ФИО"
+    discipline = "Дисциплина"
+    year = "Год_рождения"
+    birthday = "Дата_рождения"
+    level = "Уровень"
+    coach = "Тренер"
+    organization = "Клуб"
+    weight1 = "Вес"
+    zaezd_number = "Номер_заезда"
+    sex = "Пол"
     
+class Racer:
+    def __init__(self, **kwargs):
+        for field, attr in RacerFields.__dict__.items():
+            if not field.startswith('_'):  #пропускаем приватные поля
+                setattr(self, field, kwargs.get(attr, None))
+                
+        if self.birthday is not None:
+            self.year = self.birthday.year
+                
+        self.track_number = 0
+
     @property
     def zaezd(self):
         if isinstance(self.zaezd_number, str):
@@ -43,6 +54,10 @@ class Racer:
     def age(self):
         return 2024 - int(self.year)
     
+    @property
+    def disciplines(self):
+        return self.discipline
+    
     def check(self):
         check_fileds = ['number', 'fio', 'year', 'discipline', 'weight1']   
         #проверить, что все поля класса заполнены
@@ -50,6 +65,19 @@ class Racer:
             if getattr(self, key) is None:
                 raise Exception(f'Не заполнено поле {key}')
         return True
+    
+    @classmethod
+    def from_excel_row(cls, row, maps): 
+        kwargs = {}
+        for item in maps.items():
+            #присвой значение перемнной по имени из словаря
+            #item[1] может быть списком. В этом случае надо считыывать список
+            if isinstance(item[1], list):
+                kwargs[item[0]] = [row[i] for i in item[1] if row[i] is not None]
+            else:
+                kwargs[item[0]] = row[item[1]]
+ 
+        return Racer(**kwargs)
         
 class Discipline:
 
@@ -93,15 +121,12 @@ class Discipline:
             zaezd_racer_list = self.races[zaezd_name]
             track_num = 1
             for r in range(0, on_track):
-                zaezd_racer_list.append(self.racers[cur_racer_idx])
-                self.racers[cur_racer_idx].zaezd_number = zaezd_name
-                self.racers[cur_racer_idx].track_number = track_num
+                #вставить кортеж из номера дорожки и racer
+                zaezd_racer_list.append((track_num, self.racers[cur_racer_idx]))
                 cur_racer_idx += 1
                 track_num += 1
             if reminder:
-                zaezd_racer_list.append(self.racers[cur_racer_idx])
-                self.racers[cur_racer_idx].zaezd_number = zaezd_name
-                self.racers[cur_racer_idx].track_number = track_num
+                zaezd_racer_list.append((track_num, self.racers[cur_racer_idx]))
                 cur_racer_idx += 1
                 track_num += 1
                 reminder -= 1
@@ -110,36 +135,38 @@ class Discipline:
     
     def print(self):
         pass
+    
+class ExcelRacersFile:
+    def __init__(self, filename, sheet_name, row_range = (1,100), col_range = (1,20), rearrange_races = False, lines_count=9):
+        self.filename = filename
+        self.sheet_name = sheet_name
+        self.row_range = row_range
+        self.col_range = col_range
+        self.rearrange_races = rearrange_races
+        self.lines_count = lines_count
+        self.maps = {}
 
 
-def read_excel(filename, page_name = 'sheet1', rows = (1,300), reset_zaezd = False):
-    wb = openpyxl.load_workbook(filename)
-    ws = wb[page_name]
+def read_excel(settings):
+    wb = openpyxl.load_workbook(settings.filename)
+    ws = wb[settings.sheet_name]
     racers = {}
     count = 0
     zaezd_count = 0
-    for i in range(rows[0],rows[1]):
-        racer = Racer(
-            ws.cell(row=i, column=1).value, #номер
-            ws.cell(row=i, column=2).value, #имя
-            ws.cell(row=i, column=3).value, #год
-            ws.cell(row=i, column=4).value, #дисциплина
-            ws.cell(row=i, column=5).value, #класс
-            ws.cell(row=i, column=6).value, #тренер
-            ws.cell(row=i, column=7).value, #организация
-            ws.cell(row=i, column=8).value, #вес
-            ws.cell(row=i, column=9).value #заезд
-        )
-
+    for i in range(settings.row_range[0],settings.row_range[1]):
+        row = [ws.cell(row=i, column=j).value for j in range(settings.col_range[0],settings.col_range[1])]
+        
+        racer = Racer.from_excel_row(row, settings.maps)
+        
         if racer.number:
             count += 1
-            if racer.discipline not in racers:
-                racers[racer.discipline] = Discipline(racer.discipline)
             
-            if reset_zaezd:
+            if settings.rearrange_races:
                 racer.zaezd_number = None
-                
-            racers[racer.discipline].add_racer(racer) 
+            for discipline in set(racer.disciplines):  # use set to remove duplicates and speed up the loop
+                if discipline not in racers:
+                    racers[discipline] = Discipline(discipline)
+                racers[discipline].add_racer(racer)
 
             try:
                 racer.check()
@@ -149,9 +176,9 @@ def read_excel(filename, page_name = 'sheet1', rows = (1,300), reset_zaezd = Fal
             print(racer.first_name)
     
     zaezd_count = 0
-    if reset_zaezd:
+    if settings.rearrange_races:
         for discipline in racers.values():
-            zaezd_count += discipline.arrange_races('Заезд', zaezd_count+1, 9) 
+            zaezd_count += discipline.arrange_races('Заезд', zaezd_count+1, settings.lines_count) 
 
     #напечатаем все имена из массива racers
     print(f'Считано {count} участников. Дисциплин {len(racers)}. Заездов {zaezd_count}')
@@ -169,13 +196,15 @@ def read_excel(filename, page_name = 'sheet1', rows = (1,300), reset_zaezd = Fal
             z_racers = racers[item].get_race(zaezd)
             print(f'-{zaezd}: {len(z_racers)}')
             for i in range(0, len(z_racers)):
-                print(f'\t {z_racers[i].track_number} {z_racers[i].number}  {z_racers[i].last_name} {z_racers[i].first_name} \t\t{z_racers[i].weight} \t{z_racers[i].age}')
+                racer = z_racers[i][1]
+                track_number = z_racers[i][0]
+                print(f'\t {track_number} {racer.number}  {racer.last_name} {racer.first_name} \t\t{racer.weight} \t{racer.age}')
     
     return racers            
 #подключаемся и авторизуемся на сервере fastapi
 
 # Выгружаем в Excel результат работы функции read_excel
-def write_excel(filename, racers):
+def write_excel(filename, disciplines, discipline_order = None):
     from openpyxl.styles.alignment import Alignment
     from openpyxl.styles.fonts import Font
 
@@ -213,23 +242,16 @@ def write_excel(filename, racers):
                 #number_format='@'
             )
     
-    discp = [
-"мужчины 35 лет и старше",
-"юноши до 15 лет",
-"девушки до 15 лет",
-"юноши до 17 лет",
-"девушки до 17 лет",
-"юниоры до 19 лет",
-"мальчики до 13 лет",
-"девочки до 13 лет"]
-    minutes = 0
-    hours = 13
+    minutes = 15
+    hours = 18
     
     #Задать ширину колонок
+    if discipline_order is None:
+        discipline_order = disciplines.keys()
     
-    for item in racers:
-        for zaezd in racers[item].race_names():
-            z_racers = racers[item].get_race(zaezd)
+    for item in discipline_order:
+        for zaezd in disciplines[item].race_names():
+            z_racers = disciplines[item].get_race(zaezd)
             start_time = f'{hours:02d}:{minutes % 60:02d}' 
             minutes += 5
             hours = hours + minutes // 60
@@ -243,7 +265,9 @@ def write_excel(filename, racers):
             ws.append(['Дорожка', 'ФИО', 'Год рождения', 'вес, кг'])
             last_row = ws.max_row
             for i in range(0, len(z_racers)):
-                ws.append([z_racers[i].track_number, z_racers[i].fio, z_racers[i].year, z_racers[i].weight])
+                racer = z_racers[i][1]
+                track_number = z_racers[i][0]
+                ws.append([track_number, racer.fio, racer.year, racer.weight])
             #Обвести всё что ниже рамкой
             for row in ws.iter_rows(min_row=last_row, max_row=ws.max_row):
                 for cell in row:
@@ -258,8 +282,23 @@ def write_excel(filename, racers):
                         #number_format='@'
                     )
     wb.save(filename)
+
+
     
 if __name__ == '__main__':
     
-    racers = read_excel('sandbox/002_volochek_4.xlsx', 'Лист1', (3,400), False)
-    write_excel('sandbox/002_volochek_out.xlsx', racers)
+    racers_file = ExcelRacersFile(
+        filename ='sandbox/003_kartontol.xlsx', 
+        sheet_name='Ответы на форму (1)',  
+        row_range=(2,100), 
+        col_range=(1,20),
+        rearrange_races=True,
+        lines_count=6)
+    racers_file.maps = {
+            RacerFields.number: 0, RacerFields.fio: 1, RacerFields.year: 4, RacerFields.weight1: 3, RacerFields.sex: 2, 
+            RacerFields.organization: 5, RacerFields.discipline: [8,9], RacerFields.birthday: 4
+        }
+    
+    disciplines = read_excel(racers_file)
+    discipline_order = ['Мужчины 200м', 'Женщины 200м', 'Мужчины 1500м', 'Женщины 1500м']
+    write_excel('sandbox/003_kartontol_out.xlsx', disciplines, discipline_order)
