@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import openpyxl
 import requests
@@ -81,8 +82,9 @@ class Racer:
         
 class Discipline:
 
-    def __init__(self, name):
+    def __init__(self, name, distance = 200):
         self.name = name
+        self.distance = distance
         self.races = {}
         self.racers = []
 
@@ -145,12 +147,17 @@ class ExcelRacersFile:
         self.rearrange_races = rearrange_races
         self.lines_count = lines_count
         self.maps = {}
+        self.disciplines = []
 
 
 def read_excel(settings):
     wb = openpyxl.load_workbook(settings.filename)
     ws = wb[settings.sheet_name]
-    racers = {}
+    
+    disciplines = OrderedDict()
+    for discipline in settings.disciplines:
+        disciplines[discipline.name] = discipline
+    
     count = 0
     zaezd_count = 0
     for i in range(settings.row_range[0],settings.row_range[1]):
@@ -164,9 +171,9 @@ def read_excel(settings):
             if settings.rearrange_races:
                 racer.zaezd_number = None
             for discipline in set(racer.disciplines):  # use set to remove duplicates and speed up the loop
-                if discipline not in racers:
-                    racers[discipline] = Discipline(discipline)
-                racers[discipline].add_racer(racer)
+                if discipline not in disciplines:
+                    disciplines[discipline] = Discipline(discipline)
+                disciplines[discipline].add_racer(racer)
 
             try:
                 racer.check()
@@ -177,30 +184,30 @@ def read_excel(settings):
     
     zaezd_count = 0
     if settings.rearrange_races:
-        for discipline in racers.values():
+        for discipline in disciplines.values():
             zaezd_count += discipline.arrange_races('Заезд', zaezd_count+1, settings.lines_count) 
 
     #напечатаем все имена из массива racers
-    print(f'Считано {count} участников. Дисциплин {len(racers)}. Заездов {zaezd_count}')
+    print(f'Считано {count} участников. Дисциплин {len(disciplines)}. Заездов {zaezd_count}')
     print('Дисциплины:')
     total = 0
-    for item in racers.keys():
-        cnt = len(racers[item].racers)
+    for item in disciplines.keys():
+        cnt = len(disciplines[item].racers)
         print(f'{item} участников {cnt}')
         total += cnt
     print(f'== Всего участников {total}')
     
-    for item in racers:
+    for item in disciplines:
         print(item)
-        for zaezd in racers[item].race_names():
-            z_racers = racers[item].get_race(zaezd)
+        for zaezd in disciplines[item].race_names():
+            z_racers = disciplines[item].get_race(zaezd)
             print(f'-{zaezd}: {len(z_racers)}')
             for i in range(0, len(z_racers)):
                 racer = z_racers[i][1]
                 track_number = z_racers[i][0]
                 print(f'\t {track_number} {racer.number}  {racer.last_name} {racer.first_name} \t\t{racer.weight} \t{racer.age}')
     
-    return racers            
+    return disciplines            
 #подключаемся и авторизуемся на сервере fastapi
 
 # Выгружаем в Excel результат работы функции read_excel
@@ -246,10 +253,8 @@ def write_excel(filename, disciplines, discipline_order = None):
     hours = 18
     
     #Задать ширину колонок
-    if discipline_order is None:
-        discipline_order = disciplines.keys()
-    
-    for item in discipline_order:
+   
+    for item in disciplines:
         for zaezd in disciplines[item].race_names():
             z_racers = disciplines[item].get_race(zaezd)
             start_time = f'{hours:02d}:{minutes % 60:02d}' 
@@ -283,22 +288,26 @@ def write_excel(filename, disciplines, discipline_order = None):
                     )
     wb.save(filename)
 
-
+racers_file = ExcelRacersFile(
+    filename ='sandbox/003_kartontol.xlsx', 
+    sheet_name='Ответы на форму (1)',  
+    row_range=(2,100), 
+    col_range=(1,20),
+    rearrange_races=True,
+    lines_count=6)
+racers_file.maps = {
+        RacerFields.number: 0, RacerFields.fio: 1, RacerFields.year: 4, RacerFields.weight1: 3, RacerFields.sex: 2, 
+        RacerFields.organization: 5, RacerFields.discipline: [8,9], RacerFields.birthday: 4
+    }
+racers_file.disciplines = [
+    Discipline('Мужчины 200м', 200), 
+    Discipline('Женщины 200м', 200), 
+    Discipline('Мужчины 1500м', 1500),
+    Discipline('Женщины 1500м', 1500)]
     
 if __name__ == '__main__':
     
-    racers_file = ExcelRacersFile(
-        filename ='sandbox/003_kartontol.xlsx', 
-        sheet_name='Ответы на форму (1)',  
-        row_range=(2,100), 
-        col_range=(1,20),
-        rearrange_races=True,
-        lines_count=6)
-    racers_file.maps = {
-            RacerFields.number: 0, RacerFields.fio: 1, RacerFields.year: 4, RacerFields.weight1: 3, RacerFields.sex: 2, 
-            RacerFields.organization: 5, RacerFields.discipline: [8,9], RacerFields.birthday: 4
-        }
+
     
     disciplines = read_excel(racers_file)
-    discipline_order = ['Мужчины 200м', 'Женщины 200м', 'Мужчины 1500м', 'Женщины 1500м']
-    write_excel('sandbox/003_kartontol_out.xlsx', disciplines, discipline_order)
+    write_excel('sandbox/003_kartontol_out.xlsx', disciplines, racers_file.disciplines )

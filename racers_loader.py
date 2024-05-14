@@ -1,7 +1,7 @@
 import requests
 import json
 
-from racers_export import ExcelRacersFile, read_excel
+from racers_export import ExcelRacersFile, read_excel, racers_file
 
 class APICommand:
     def __init__(self, api, path):
@@ -147,12 +147,6 @@ class NovaRaceServer (ApiClient):
         self.race = RacesCommand(self)
         self.sportsmen = SportsmenCommand(self)
 
-remote_api_client = NovaRaceServer('http://82.97.247.48:8000')
-
-local_api_client = NovaRaceServer('http://localhost:8000')
-local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMDYzNTk2M30.v9Nw8MzEumOI2fSKmFr4Y-oPoriJilYwpLsTKIu5xJM'
-local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMjE3MjYxMH0.hG2ZOTjTB7b8q6gxzVFNrqOGsZbqxFMP9vw-BeHEUrs'
-local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxMjUxODEyOX0.HjtFhK38qxg-zz8TsJeawgEsPoWejdCvehuKOSowrCo'
 
 
 def create_tournament(api):
@@ -203,14 +197,14 @@ def create_tournament(api):
     api.race.add('Заезд 1', dsicipline_id, 'СПб', '2024-03-15T06:31:00.392Z', 0, tracks)
 
 def load_tournaments(api, excel_settings):
-    tournament_title = 'КТ от НОВА'
-    race_place = 'Вышний Волочёк'
-    start_date='2024-04-11'
-    end_date='2024-04-11'
-    start_time = '13:30' #время первого заезда
+    tournament_title = 'Заводской заряд'
+    race_place = 'Санкт-Петербург'
+    start_date='2024-05-14'
+    end_date='2024-05-14'
+    start_time = '18:15' #время первого заезда
     race_duration = 5 #время на один заезд в минутах
         
-    racers = read_excel(excel_settings)
+    disciplines = read_excel(excel_settings)
 
     tour = api.tournament.add(title=tournament_title, start_date=start_date, end_date=end_date, is_archive=0, find_before = True)
     tour_id = tour['id']
@@ -218,15 +212,23 @@ def load_tournaments(api, excel_settings):
 
     minutes = int(start_time.split(':')[1]) 
     hours = int(start_time.split(':')[0])
-    for item in racers:
-        discipline = api.discipline.add(item, tour_id, 200, 8, find_before = True)
-        for zaezd in racers[item].race_names():
-            z_racers = racers[item].get_race(zaezd)
+    
+    sportman_ids = {}
+    
+    for discipline in disciplines.values():
+        discipline_db = api.discipline.add(discipline.name, tour_id, discipline.distance, 8, find_before = True)
+        for zaezd in discipline.race_names():
+            z_racers = discipline.get_race(zaezd)
             print(f'-{zaezd}: {len(z_racers)}')
             tracks = []
             for i in range(0, len(z_racers)):
-                sportman = z_racers[i]
-                added_sp = api.sportsmen.add(sportman.first_name, sportman.last_name, sportman.weight, sportman.age, tournaments)
+                sportman = z_racers[i][1]
+                if sportman in sportman_ids:
+                    added_sp = sportman_ids[sportman]
+                else:
+                    added_sp = api.sportsmen.add(sportman.first_name, sportman.last_name, sportman.weight, sportman.age, tournaments)
+                    sportman_ids[sportman] = added_sp
+                
                 track = {"number": i+1,"sportsman_id": added_sp['id']}
                 tracks.append(track)
 
@@ -235,20 +237,17 @@ def load_tournaments(api, excel_settings):
             start_time = f'{start_date}T{hours:02d}:{minutes % 60:02d}:00.392Z' 
             minutes += race_duration
             
-            api.race.add(zaezd, discipline['id'], race_place, start_time, 0, tracks)
+            api.race.add(zaezd, discipline_db['id'], race_place, start_time, 0, tracks)
 
-    return racers            
+    return disciplines            
  
-
 if __name__ == '__main__':
-    racer_file = ExcelRacersFile(
-        filename='sandbox/002_volochek_4.xlsx',
-        sheet_name='Лист1',
-        row_range=(3,400),
-        rearrange_races=False
-    )
-    
-    load_tournaments(local_api_client, racer_file)
+    remote_api_client = NovaRaceServer('http://82.97.247.48:8000')
+
+    local_api_client = NovaRaceServer('http://localhost:8000')
+    local_api_client.auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcxNTg4NDA0MH0.vMgdl1SXQmSjE8kfHiFxA9mYyBwBKKGI48-aNfIHiHg'
+
+    load_tournaments(local_api_client, racers_file)
 
 
 
