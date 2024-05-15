@@ -3,7 +3,28 @@ import os
 import openpyxl
 import requests
 
-class RacerFields:
+class NamedFieldInitializer :
+    def __init__(self, **kwargs):
+        for field, attr in self.__class__.__dict__.items():
+            if not field.startswith('_'):  #пропускаем приватные поля
+                value = kwargs.get(attr, None)
+                if value is not None:
+                    setattr(self, field, value)
+                
+    @classmethod
+    def from_excel_row(cls, row, maps): 
+        kwargs = {}
+        for item in maps.items():
+            #присвой значение перемнной по имени из словаря
+            #item[1] может быть списком. В этом случае надо считыывать список
+            if isinstance(item[1], list):
+                kwargs[item[0]] = [row[i] for i in item[1] if row[i] is not None]
+            else:
+                kwargs[item[0]] = row[item[1]]
+ 
+        return cls(**kwargs)
+                    
+class Racer (NamedFieldInitializer):
     number = "Стартовый номер"
     fio = "ФИО"
     discipline = "Дисциплина"
@@ -16,16 +37,21 @@ class RacerFields:
     zaezd_number = "Номер заезда"
     sex = "Пол"
     
-class Racer:
     def __init__(self, **kwargs):
-        for field, attr in RacerFields.__dict__.items():
-            if not field.startswith('_'):  #пропускаем приватные поля
-                setattr(self, field, kwargs.get(attr, None))
+        self.birthday = None
+        
+        super().__init__(**kwargs)
                 
         if self.birthday is not None:
             self.year = self.birthday.year
                 
         self.track_number = 0
+        
+    def is_valid(self):
+        try:
+            return self.check()
+        except:
+            return False
 
     @property
     def zaezd(self):
@@ -66,29 +92,19 @@ class Racer:
             if getattr(self, key) is None:
                 raise Exception(f'Не заполнено поле {key}')
         return True
-    
-    @classmethod
-    def from_excel_row(cls, row, maps): 
-        kwargs = {}
-        for item in maps.items():
-            #присвой значение перемнной по имени из словаря
-            #item[1] может быть списком. В этом случае надо считыывать список
-            if isinstance(item[1], list):
-                kwargs[item[0]] = [row[i] for i in item[1] if row[i] is not None]
-            else:
-                kwargs[item[0]] = row[item[1]]
- 
-        return Racer(**kwargs)
-        
-class Discipline:
+
+class Discipline (NamedFieldInitializer):
     name = "Дисциплина"
     distance = "Дистанция"
-
-    def __init__(self, name, distance = 200):
-        self.name = name
-        self.distance = distance
-        self.races = {}
+    race_duration = "Длительность заезда, мин"
+    reglament = "Регламент"
+    trainers_group = "Группа тренажеров"
+    trainers_count = "Количество тренажеров"
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.racers = []
+        self.races = {}
 
     def add_racer(self, racer):
         self.racers.append(racer)
@@ -141,11 +157,10 @@ class Discipline:
         pass
     
 class ExcelRacersFile:
-    def __init__(self, filename, sheet_name, row_range = (1,100), col_range = (1,20), rearrange_races = False, tracks_count=9):
+    def __init__(self, filename, sheet_name_racers="Участники",  rearrange_races = False, tracks_count=9):
         self.filename = filename
-        self.sheet_name = sheet_name
-        self.row_range = row_range
-        self.col_range = col_range
+        self.sheet_name = sheet_name_racers
+        self.sheet_name_disciplines = "Дисциплины"
         self.rearrange_races = rearrange_races
         self.lines_count = tracks_count
 
@@ -163,11 +178,11 @@ def read_excel_header(ws):
                     map[value] = [map[value], idx]
                 else:
                     map[value].append(idx)
-    return map
+    return map 
 
-def read_disciplines(wb):
+def read_disciplines(wb, sheet_name):
     disciplines = OrderedDict()
-    ws = wb['Дисциплины']
+    ws = wb[sheet_name]
     #Читаем заголовок дисциплин
     map = {}
     for i in range(ws.min_column, ws.max_column+1):
@@ -176,7 +191,16 @@ def read_disciplines(wb):
     #Читаем дисциплины
     for i in range(2, ws.max_row+1):
         row = [ws.cell(row=i, column=j).value for j in range(ws.min_column, ws.max_column+1)]
-        discipline = Discipline(row[map[Discipline.name]], row[map[Discipline.distance]])
+        row_values = {}
+        for item in map.items():
+            #присвой значение перемнной по имени из словаря
+            #item[1] может быть списком. В этом случае надо считыывать список
+            if isinstance(item[1], list):
+                row_values[item[0]] = [row[i] for i in item[1] if row[i] is not None]
+            else:
+                row_values[item[0]] = row[item[1]]
+
+        discipline = Discipline.from_excel_row(row, map)
         disciplines[discipline.name] = discipline
         
     return disciplines
@@ -186,17 +210,17 @@ def read_excel(settings):
     wb = openpyxl.load_workbook(settings.filename)
     ws = wb[settings.sheet_name]
     
-    disciplines = read_disciplines(wb)
+    disciplines = read_disciplines(wb, settings.sheet_name_disciplines)
     column_map = read_excel_header(ws)
     
     count = 0
     zaezd_count = 0
-    for i in range(settings.row_range[0],settings.row_range[1]):
-        row = [ws.cell(row=i, column=j).value for j in range(settings.col_range[0],settings.col_range[1])]
+    for i in range(ws.min_row + 1, ws.max_row):
+        row = [ws.cell(row=i, column=j).value for j in range(ws.min_column,ws.max_column+1)]
         
         racer = Racer.from_excel_row(row, column_map)
         
-        if racer.number:
+        if racer.is_valid():
             count += 1
             
             if settings.rearrange_races:
@@ -204,7 +228,9 @@ def read_excel(settings):
             for discipline in set(racer.disciplines):  # use set to remove duplicates and speed up the loop
                 if discipline not in disciplines:
                     disciplines[discipline] = Discipline(discipline)
-                disciplines[discipline].add_racer(racer)
+                    
+                dd = disciplines[discipline]
+                dd.add_racer(racer)
 
             try:
                 racer.check()
@@ -320,14 +346,12 @@ def write_excel(filename, disciplines):
     wb.save(filename)
 
 racers_file = ExcelRacersFile(
-    filename ='sandbox/003_kartontol.xlsx', 
-    sheet_name='Участники',  
-    row_range=(2,100), 
-    col_range=(1,20),
+    filename ='sandbox/003_kartontol.xlsx',  
     rearrange_races=True,
     tracks_count=6)
     
 if __name__ == '__main__':
+    
     try:
         disciplines = read_excel(racers_file)
         write_excel('sandbox/003_kartontol_out.xlsx', disciplines)
