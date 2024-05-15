@@ -4,16 +4,16 @@ import openpyxl
 import requests
 
 class RacerFields:
-    number = "Стартовый_номер"
+    number = "Стартовый номер"
     fio = "ФИО"
     discipline = "Дисциплина"
-    year = "Год_рождения"
-    birthday = "Дата_рождения"
+    year = "Год рождения"
+    birthday = "Дата рождения"
     level = "Уровень"
     coach = "Тренер"
     organization = "Клуб"
-    weight1 = "Вес"
-    zaezd_number = "Номер_заезда"
+    weight1 = "Вес, кг"
+    zaezd_number = "Номер заезда"
     sex = "Пол"
     
 class Racer:
@@ -81,6 +81,8 @@ class Racer:
         return Racer(**kwargs)
         
 class Discipline:
+    name = "Дисциплина"
+    distance = "Дистанция"
 
     def __init__(self, name, distance = 200):
         self.name = name
@@ -139,31 +141,60 @@ class Discipline:
         pass
     
 class ExcelRacersFile:
-    def __init__(self, filename, sheet_name, row_range = (1,100), col_range = (1,20), rearrange_races = False, lines_count=9):
+    def __init__(self, filename, sheet_name, row_range = (1,100), col_range = (1,20), rearrange_races = False, tracks_count=9):
         self.filename = filename
         self.sheet_name = sheet_name
         self.row_range = row_range
         self.col_range = col_range
         self.rearrange_races = rearrange_races
-        self.lines_count = lines_count
-        self.maps = {}
-        self.disciplines = []
+        self.lines_count = tracks_count
 
+def read_excel_header(ws):
+    map = {}
+    for i in range(ws.min_column, ws.max_column+1):
+        value = ws.cell(row=1, column=i).value
+        idx = i - 1
+        if value is not None:
+            if value not in map:
+                map[value] = idx
+            else:
+                #проверить что значение в map не является списком
+                if not isinstance(map[value], list):
+                    map[value] = [map[value], idx]
+                else:
+                    map[value].append(idx)
+    return map
 
+def read_disciplines(wb):
+    disciplines = OrderedDict()
+    ws = wb['Дисциплины']
+    #Читаем заголовок дисциплин
+    map = {}
+    for i in range(ws.min_column, ws.max_column+1):
+        if ws.cell(row=1, column=i).value is not None:
+            map[ws.cell(row=1, column=i).value] = i - 1
+    #Читаем дисциплины
+    for i in range(2, ws.max_row+1):
+        row = [ws.cell(row=i, column=j).value for j in range(ws.min_column, ws.max_column+1)]
+        discipline = Discipline(row[map[Discipline.name]], row[map[Discipline.distance]])
+        disciplines[discipline.name] = discipline
+        
+    return disciplines
+
+        
 def read_excel(settings):
     wb = openpyxl.load_workbook(settings.filename)
     ws = wb[settings.sheet_name]
     
-    disciplines = OrderedDict()
-    for discipline in settings.disciplines:
-        disciplines[discipline.name] = discipline
+    disciplines = read_disciplines(wb)
+    column_map = read_excel_header(ws)
     
     count = 0
     zaezd_count = 0
     for i in range(settings.row_range[0],settings.row_range[1]):
         row = [ws.cell(row=i, column=j).value for j in range(settings.col_range[0],settings.col_range[1])]
         
-        racer = Racer.from_excel_row(row, settings.maps)
+        racer = Racer.from_excel_row(row, column_map)
         
         if racer.number:
             count += 1
@@ -211,7 +242,7 @@ def read_excel(settings):
 #подключаемся и авторизуемся на сервере fastapi
 
 # Выгружаем в Excel результат работы функции read_excel
-def write_excel(filename, disciplines, discipline_order = None):
+def write_excel(filename, disciplines):
     from openpyxl.styles.alignment import Alignment
     from openpyxl.styles.fonts import Font
 
@@ -290,24 +321,15 @@ def write_excel(filename, disciplines, discipline_order = None):
 
 racers_file = ExcelRacersFile(
     filename ='sandbox/003_kartontol.xlsx', 
-    sheet_name='Ответы на форму (1)',  
+    sheet_name='Участники',  
     row_range=(2,100), 
     col_range=(1,20),
     rearrange_races=True,
-    lines_count=6)
-racers_file.maps = {
-        RacerFields.number: 0, RacerFields.fio: 1, RacerFields.year: 4, RacerFields.weight1: 3, RacerFields.sex: 2, 
-        RacerFields.organization: 5, RacerFields.discipline: [8,9], RacerFields.birthday: 4
-    }
-racers_file.disciplines = [
-    Discipline('Мужчины 200м', 200), 
-    Discipline('Женщины 200м', 200), 
-    Discipline('Мужчины 1500м', 1500),
-    Discipline('Женщины 1500м', 1500)]
+    tracks_count=6)
     
 if __name__ == '__main__':
-    
-
-    
-    disciplines = read_excel(racers_file)
-    write_excel('sandbox/003_kartontol_out.xlsx', disciplines, racers_file.disciplines )
+    try:
+        disciplines = read_excel(racers_file)
+        write_excel('sandbox/003_kartontol_out.xlsx', disciplines)
+    except Exception as e:
+        print(f'Ошибка: {e}')
