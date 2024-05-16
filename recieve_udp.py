@@ -18,12 +18,11 @@ udp_logger = create_logger('udp.log', use_formatter=False)
 start_time =  time.time()
 
 
-def receive_udp_from_trainer(update_func, udp_address=("192.168.50.71", 61112)):
+def receive_udp_from_trainer(update_func, udp_address=("192.168.137.1", 61112)):
     global stop_udp_flag
 
     UDP_IP = udp_address[0]
     UDP_PORT = udp_address[1]
-    client_header = "BRTC103"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
@@ -35,10 +34,7 @@ def receive_udp_from_trainer(update_func, udp_address=("192.168.50.71", 61112)):
         except:
             print ("Error")
 
-        udp_packet = UdpPacket(data, addr)
-
-        if udp_packet.header != client_header:
-            continue
+        udp_packet = UdpPacket.unpack(data, addr)
 
         update_func(udp_packet)
 
