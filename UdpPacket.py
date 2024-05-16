@@ -38,19 +38,68 @@ class UDPBoatState:
         
         return RacerState.error
     
-
 class UdpPacket:
     def __init__(self, data, addr):
         self.data = data
         self.addr = addr
 
+        self.header = self.get_header() 
+        if data[:7] != self.header:
+            raise Exception(f"Парсер для пакета {self.header} вызван для пакета {data[:7]}")
+
+        self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = [None] * 15
+        self.power = None
+        self.spec_distance = None
+
+        self._unpuck(self.get_format(), self.data)
+
+        self.state = UDPBoatState(self._state, self.falseStart)
+        self.header = self.header.decode().replace('\0', '')
+        
+
+    def _unpuck(self, str_format, data):
+        self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, data)
+
+    def get_header(self):
+        return b"BRTC103"
+    
+    def get_format(self):
+        return "<8s I BBBB BBBB f f f f f f"
+    
+    @staticmethod
+    def unpack(data, addr):
+        if data[:7] == b"BRTC103":
+            return UdpPacket_103(data, addr)
+        
+        if data[:7] == b"BRTC104":
+            return UdpPacket_104(data, addr)     
+          
+        raise Exception(f"Неизвестный формат пакета от тренажёра {data[:7]}")
+
+class UdpPacket_103 (UdpPacket):
+    def __init__(self, data, addr):
+        self.data = data
+        self.addr = addr
+        
         str_format = "<8s I BBBB BBBB f f f f f f"
+        
         header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.reserve, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate = struct.unpack(str_format, self.data)
 
         self.state = UDPBoatState(self._state, self.falseStart)
 
         self.header = header.decode().replace('\0', '')
         
+class UdpPacket_104 (UdpPacket):
+    def get_header(self):
+        return b"BRTC104"
+    
+    def get_format(self):
+        return "<8s I BBBB BBBB f f f f f f f"
+    
+    def _unpuck(self, str_format, data):
+        self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.power, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate, self.spec_distance = struct.unpack(str_format, data)
+
+
 class UDPPacketBuffer:
     delay_steps = 0
     empty_counter = 0
