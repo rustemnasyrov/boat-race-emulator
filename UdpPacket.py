@@ -97,7 +97,7 @@ class UdpPacket_104 (UdpPacket):
         return "<8s I BBBB BBBB f f f f f f f"
     
     def _unpuck(self, str_format, data):
-        self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.swimmingGroup, self.lane, self.falseStart, self.power, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate, self.spec_distance = struct.unpack(str_format, data)
+        self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.lane, self.swimmingGroup, self.falseStart, self.power, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate, self.spec_distance = struct.unpack(str_format, data)
 
 
 class UDPPacketBuffer:

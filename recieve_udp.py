@@ -51,7 +51,7 @@ def log_update_func(udp_packet):
     global udp_logger, start_time, last_timestamp, last_boat_time, active_id
 
     mms = tm[udp_packet.lane].get_measure_str()
-    print(f"{udp_packet.lane} {mms}")
+    print(f"{udp_packet.swimmingGroup} - {udp_packet.lane} {mms}")
     udp_logger.info(f"{udp_packet.lane} {mms}")
     tm[udp_packet.lane].update_time()   
 
