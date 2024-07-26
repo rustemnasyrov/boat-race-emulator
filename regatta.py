@@ -79,6 +79,7 @@ class RacerModel:
         self.acceleration = 0
         self.state = RacerState.disconnected
         self.update_counter = self.WAIT_COUNTER_VALUE
+        self.estafetEtap = -1
 
     def set_time_from_seconds(self, seconds):
         self.time = int(seconds * 1000)
@@ -146,6 +147,15 @@ class RegattaRaceModel:
         self.tracks = {}
         self.track_ids = {}
         self.init_tracks(fill=True)
+        self.estafetDistances = []
+        
+    def estafeteBorder(self, etapNum):
+        #Нужно сложить дистанции от 0 до этапа из estafetDistances
+        if self.estafetDistances == [] or etapNum < 0 or etapNum >= len(self.estafetDistances):
+            return 1000000
+        
+        return sum(self.estafetDistances[0:etapNum])
+        
         
     @property
     def is_status_countdown(self):

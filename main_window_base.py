@@ -19,8 +19,13 @@ class MainWindowBase(QWidget):
         
         # Загрузка звукового файла
         pygame.init()
-        sound_file = "horn.wav"  # Укажите путь к вашему звуковому файлу
-        pygame.mixer.music.load(sound_file)
+        sound_file_start = "horn.wav"  # Укажите путь к вашему звуковому файлу
+        sound_file_esatfets = "horn_gong.wav"
+        
+        pygame.mixer.init
+        pygame.mixer.music.load(sound_file_start)
+        
+        self.estafet_sound = pygame.mixer.Sound(sound_file_esatfets)
         
         self.dict = self._info.to_dict()
 

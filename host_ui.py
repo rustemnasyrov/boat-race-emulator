@@ -103,13 +103,20 @@ class HostWindow(MainWindowBase):
         data = self.info_to_send()
         self.thread.send_message(data)
         self.get_responser.set_data(self._info.to_dict())
+        self.estafeta_beep()
 
     def receive_udp_packets(self):
         #receive_udp_from_trainer(self.packet_buffer.add_packet_to_buffer, self.udp_address)
         receive_udp_from_trainer(self.process_udp_packet, self.udp_address)
-
-
-
+        
+    #Пищим для эстафеты
+    def estafeta_beep(self):
+        if self._info.race_status == 'go':
+            for track in self._info.tracks.values():
+                if track.get_distance_meters() >= self._info.estafeteBorder(track.estafetEtap):
+                    self.estafet_sound.play()
+                    track.estafetEtap += 1
+                
     def process_udp_packet(self, udp_packet):
         self._info.process_udp_packet(udp_packet)
 
@@ -139,11 +146,19 @@ class HostWindow(MainWindowBase):
         self._info.regatta_name = race['tournament_title']
         self._info.race_name = str(race['discipline_title']) + ', ' + str(race['race_title'])
         self._info.race_status = race['status'] if race['status'] != 'stop' else 'ready'
-
+       
+        
+        estafet = False
+        
         if self._info.race_status == 'ready':
             self.delete_racers()
             self._info.init_tracks(count = len(data['simulators']))
             self.add_racers(self.main_layout)
+            
+            #Если race['discipline_title'] начинается со слова "Эстафета" то после неё череззапятую идут дистанции, которые надо считать и сохранит в массиве
+            if 'Эстафета' in race['discipline_title']:
+                estafet = True
+                self._info.estafetDistances = [int(i) for i in race['discipline_title'].split()[-1].split(',')]
 
         for idx, value in data['simulators'].items():
             if int(idx) in self._info.tracks:
@@ -151,6 +166,8 @@ class HostWindow(MainWindowBase):
                 track.racer = value['fio']
                 track.weight = value['weight']
                 track.age = value['age']
+                if estafet:
+                    track.estafetEtap = 1
 
         send_udp_to_trainer(self._info, self.udp_send_address)
 
