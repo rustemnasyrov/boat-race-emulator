@@ -72,7 +72,10 @@ class UdpPacket:
             return UdpPacket_103(data, addr)
         
         if data[:7] == b"BRTC104":
-            return UdpPacket_104(data, addr)     
+            return UdpPacket_104(data, addr)   
+
+        if data[:7] == b"BRTC105":
+            return UdpPacket_105(data, addr)  
           
         raise Exception(f"Неизвестный формат пакета от тренажёра {data[:7]}")
 
@@ -98,6 +101,16 @@ class UdpPacket_104 (UdpPacket):
     
     def _unpuck(self, str_format, data):
         self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.lane, self.swimmingGroup, self.falseStart, self.power, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate, self.spec_distance = struct.unpack(str_format, data)
+
+class UdpPacket_105 (UdpPacket):
+    def get_header(self):
+        return b"BRTC105"
+    
+    def get_format(self):
+        return "<8s I BBBB BBBB f f f f f f f I I f"
+    
+    def _unpuck(self, str_format, data):
+        self.header, self.id, self.packetNumber, self._state, self.massHuman, self.ageHuman, self.lane, self.swimmingGroup,self.falseStart, self.power, self.race_time, self.boatTime, self.distance, self.speed, self.acceleration, self.strokeRate,self.spec_distance, self.pressCount, self.systemTime, self.averageInterval = struct.unpack(str_format, data)
 
 
 class UDPPacketBuffer:
